@@ -4,11 +4,16 @@ import type { RunnerInput } from "@tac/shared";
 import { loadConfig } from "./config";
 import { ControlLoop } from "./loop";
 import { HttpRunnerClient, type RunnerClient } from "./runner-client";
-import { createControlApp, InputSchema, loginOf, originAllowed, sendInput } from "./server";
+import { allowedHostsFor, createControlApp, hostGuard, InputSchema, isLoopbackHost, loginOf, sendInput } from "./server";
 import { Store } from "./store";
 
 const env = process.env;
 const [hostname, port] = (env.TAC_CONTROL_LISTEN ?? "127.0.0.1:7780").split(":");
+if (!isLoopbackHost(hostname!)) {
+  console.error(`TAC_CONTROL_LISTEN must be a loopback address (127.0.0.1, localhost or ::1), got "${hostname}": `
+    + "control trusts the Tailscale-User-Login header, so it must be reachable only through Tailscale Serve");
+  process.exit(1);
+}
 if (env.TAC_DEV_LOGIN && hostname !== "127.0.0.1") { console.error("TAC_DEV_LOGIN is only allowed on 127.0.0.1"); process.exit(1); }
 const allowedLogins = (env.TAC_ALLOWED_LOGINS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 if (!allowedLogins.length) { console.error("TAC_ALLOWED_LOGINS is required"); process.exit(1); }
@@ -20,6 +25,7 @@ const client = (host: string) => clients.get(host)!;
 const loop = new ControlLoop({ store, projects, hosts, client, now: Date.now, idleTimeoutMs: Number(env.TAC_IDLE_TIMEOUT_MS ?? 900_000) });
 const deps = {
   store, loop, client, allowedLogins, devLogin: env.TAC_DEV_LOGIN,
+  allowedHosts: allowedHostsFor(port!, env.TAC_PUBLIC_HOSTS),
   uiDir: join(import.meta.dir, "../dist/ui"),
   dispatchDeps: { store, projects, hosts, client, now: Date.now },
 };
@@ -32,11 +38,13 @@ Bun.serve<WsData>({
   fetch(req, server) {
     const m = new URL(req.url).pathname.match(/^\/api\/runs\/(r[a-z0-9]{8})\/terminal$/);
     if (m) {
+      const guard = hostGuard(deps.allowedHosts, {
+        host: req.headers.get("Host") ?? new URL(req.url).host,
+        forwardedHost: req.headers.get("X-Forwarded-Host"), origin: req.headers.get("Origin"),
+      });
+      if (guard) return new Response(guard, { status: 403 });
       const login = loginOf(deps, req.headers.get("Tailscale-User-Login") ?? undefined);
       if (!login) return new Response("unauthorized", { status: 401 });
-      if (!originAllowed({ origin: req.headers.get("Origin"), host: req.headers.get("Host"), forwardedHost: req.headers.get("X-Forwarded-Host") })) {
-        return new Response("forbidden origin", { status: 403 });
-      }
       if (!store.getRun(m[1]!)) return new Response("not found", { status: 404 });
       return server.upgrade(req, { data: { runId: m[1]!, login } }) ? undefined : new Response("upgrade failed", { status: 400 });
     }

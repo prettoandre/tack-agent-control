@@ -10,6 +10,8 @@ import type { Store } from "./store";
 export interface ControlDeps {
   store: Store; loop: Pick<ControlLoop, "hostState">; dispatchDeps: DispatchDeps;
   client: (host: string) => RunnerClient; allowedLogins: string[]; devLogin?: string; uiDir?: string;
+  /** Lowercase host[:port] values accepted in Host, X-Forwarded-Host and Origin (see allowedHostsFor). */
+  allowedHosts: string[];
 }
 
 export const InputSchema = z.discriminatedUnion("type", [
@@ -28,12 +30,34 @@ export function loginOf(d: Pick<ControlDeps, "allowedLogins" | "devLogin">, head
   return login && d.allowedLogins.includes(login) ? login : null;
 }
 
-/** CSRF guard: a browser Origin must match the Host (or X-Forwarded-Host) the request came in on. */
-export function originAllowed(h: { origin?: string | null; host?: string | null; forwardedHost?: string | null }): boolean {
-  if (!h.origin) return true;
-  let originHost: string;
-  try { originHost = new URL(h.origin).host; } catch { return false; }
-  return originHost === h.host || originHost === h.forwardedHost;
+/** Control trusts the Tailscale-User-Login header, which is safe only when Tailscale Serve is the sole way in. */
+export function isLoopbackHost(hostname: string): boolean {
+  return hostname === "127.0.0.1" || hostname === "localhost" || hostname === "::1";
+}
+
+/** Loopback names for the listen port, plus the public names from TAC_PUBLIC_HOSTS (comma list). */
+export function allowedHostsFor(port: string | number, publicHosts = ""): string[] {
+  const extra = publicHosts.split(",").map((h) => h.trim().toLowerCase()).filter(Boolean);
+  return [`127.0.0.1:${port}`, `localhost:${port}`, `[::1]:${port}`, ...extra];
+}
+
+/**
+ * DNS-rebinding and CSRF guard. Host must be allowed; X-Forwarded-Host, when present, must be allowed too
+ * (page scripts can set it, so it never replaces the Host check); a browser Origin must name an allowed host.
+ * Returns the error code, or null when the request may proceed.
+ */
+export function hostGuard(
+  allowed: readonly string[], h: { host?: string | null; forwardedHost?: string | null; origin?: string | null },
+): "forbidden_host" | "forbidden_origin" | null {
+  const ok = (v: string) => allowed.includes(v.toLowerCase());
+  if (!h.host || !ok(h.host)) return "forbidden_host";
+  if (h.forwardedHost && !ok(h.forwardedHost)) return "forbidden_host";
+  if (h.origin) {
+    let originHost: string;
+    try { originHost = new URL(h.origin).host; } catch { return "forbidden_origin"; }
+    if (!ok(originHost)) return "forbidden_origin";
+  }
+  return null;
 }
 
 /** Audit, then forward. Returns null on success or { status, code, message } on failure. */
@@ -63,6 +87,16 @@ export function createControlApp(d: ControlDeps) {
   });
 
   app.use("/api/*", async (c, next) => {
+    // Bun.serve always sets Host (and builds the URL from it); in-process requests carry it only in the URL
+    const guard = hostGuard(d.allowedHosts, {
+      host: c.req.header("Host") ?? new URL(c.req.url).host,
+      forwardedHost: c.req.header("X-Forwarded-Host"), origin: c.req.header("Origin"),
+    });
+    if (guard) return c.json(err(guard), 403);
+    await next();
+  });
+
+  app.use("/api/*", async (c, next) => {
     const login = loginOf(d, c.req.header("Tailscale-User-Login"));
     if (!login) return c.json(err("unauthorized"), 401);
     c.set("login", login);
@@ -70,13 +104,7 @@ export function createControlApp(d: ControlDeps) {
   });
 
   app.use("/api/*", async (c, next) => {
-    const m = c.req.method;
-    if (m === "GET" || m === "HEAD") return next();
-    const origin = c.req.header("Origin");
-    if (!originAllowed({ origin, host: c.req.header("Host"), forwardedHost: c.req.header("X-Forwarded-Host") })) {
-      return c.json(err("forbidden_origin"), 403);
-    }
-    if (m === "POST" && !(c.req.header("content-type") ?? "").toLowerCase().startsWith("application/json")) {
+    if (c.req.method === "POST" && !(c.req.header("content-type") ?? "").toLowerCase().startsWith("application/json")) {
       return c.json(err("unsupported_media_type"), 415);
     }
     await next();
@@ -114,6 +142,7 @@ export function createControlApp(d: ControlDeps) {
 
   app.post("/api/runs/:id/cancel", async (c) => {
     const run = mustRun(c.req.param("id"));
+    if (TERMINAL_STATES.includes(run.state)) return c.json(err("not_cancellable"), 409);
     if (run.state !== "queued") await d.client(run.host).cancel(run.id);
     d.store.updateRun(run.id, { state: "cancelled", finishedAt: Date.now() });
     d.store.addEvent({ runId: run.id, at: Date.now(), kind: "state", source: "user", data: { from: run.state, to: "cancelled", login: c.get("login") } });
