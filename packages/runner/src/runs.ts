@@ -67,8 +67,47 @@ export class RunManager {
     this.d.state.remove(runId);
   }
 
-  // status, input, screen: Task 8
-  async status(_runId: string): Promise<RunnerRunStatus> { throw new Error("not implemented"); }
-  async input(_runId: string, _input: RunnerInput): Promise<void> { throw new Error("not implemented"); }
-  async screen(_runId: string, _lines: number): Promise<string> { throw new Error("not implemented"); }
+  async status(runId: string): Promise<RunnerRunStatus> {
+    const rec = this.d.state.load(runId);
+    if (!rec) return { runId, known: false, agentPresent: false, agentStatus: null, promptSent: false, progress: null, prUrl: null, headSha: null };
+
+    const agent = await this.d.herdr.getAgent(runId);
+    let agentStatus = agent?.agentStatus ?? null;
+
+    if (agent && !rec.promptSent && (agentStatus === "idle" || agentStatus === "done")) {
+      try {
+        await this.d.herdr.prompt(runId, rec.prompt);
+        rec.promptSent = true;
+        this.d.state.save(rec);
+        agentStatus = "working";
+      } catch (e) {
+        if (!(e instanceof HerdrError && e.code === "agent_blocked")) throw e;
+      }
+    }
+
+    const planFile = Bun.file(join(rec.worktreePath, rec.planPath));
+    const progress = (await planFile.exists()) ? parsePlanProgress(await planFile.text()) : null;
+
+    let prUrl: string | null = null;
+    try {
+      const r = await this.d.exec(["gh", "pr", "list", "--head", rec.branch, "--state", "all", "--json", "url", "--limit", "1"], { cwd: rec.worktreePath });
+      if (r.code === 0) prUrl = (JSON.parse(r.stdout) as { url: string }[])[0]?.url ?? null;
+    } catch {}
+
+    return {
+      runId, known: true, agentPresent: agent !== null, agentStatus, promptSent: rec.promptSent,
+      progress, prUrl, headSha: await this.d.git.headSha(rec.worktreePath),
+    };
+  }
+
+  async input(runId: string, input: RunnerInput): Promise<void> {
+    const rec = this.record(runId);
+    if (input.type === "prompt") return this.d.herdr.prompt(runId, input.text);
+    if (input.type === "keys") return this.d.herdr.sendKeys(runId, input.keys);
+    return this.d.herdr.sendText(rec.paneId, input.text);
+  }
+
+  async screen(runId: string, lines: number): Promise<string> {
+    return this.d.herdr.readPane(this.record(runId).paneId, lines, "ansi");
+  }
 }
