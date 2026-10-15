@@ -3,7 +3,14 @@ import { parsePlanProgress, type RunnerInput, type RunnerRunStatus, type RunnerS
 import type { Exec } from "./exec";
 import type { Git } from "./git";
 import { HerdrError, type Herdr } from "./herdr";
-import type { RunRecord, StateDir } from "./statefile";
+import type { PromptBaseline, RunRecord, StateDir } from "./statefile";
+
+/** The agent changed something since the prompt went out: a new PR, more ticked boxes, or a new commit. */
+function changedSince(b: PromptBaseline | null, now: PromptBaseline): boolean {
+  if (now.prUrl && now.prUrl !== (b?.prUrl ?? null)) return true;
+  if (now.done > (b?.done ?? 0)) return true;
+  return Boolean(b?.headSha && now.headSha && now.headSha !== b.headSha);
+}
 
 export class RunNotFound extends Error {
   constructor(runId: string) { super(`run ${runId} not found`); }
@@ -11,8 +18,31 @@ export class RunNotFound extends Error {
 
 export interface RunManagerDeps { herdr: Herdr; git: Git; state: StateDir; worktreeRoot: string; exec: Exec; now?: () => number }
 
-const NUDGE_AFTER_MS = 5000;
-const MAX_NUDGES = 3;
+/** Below control's 5 s poll, so a retry is due on every poll rather than every other one. */
+const RETRY_AFTER_MS = 4000;
+const MAX_PROMPT_ATTEMPTS = 3;
+/** How much of the prompt has to be on screen to count as seen. */
+const PROMPT_MATCH_CHARS = 40;
+
+const squash = (s: string) => s.replace(/[\s│]+/g, "");
+const isRule = (line: string) => /^[╭╰]?─{10,}[╮╯]?$/.test(line.trim());
+
+/**
+ * Where the initial prompt is on the agent's screen (plain text): still in the input box, i.e. typed but not
+ * submitted; only in the transcript above the box, i.e. submitted; or nowhere, i.e. dropped. The input box is the
+ * text between the last two horizontal rules (Claude Code); without such a box any match counts as "input".
+ * Matching uses the first PROMPT_MATCH_CHARS characters of the prompt with all whitespace removed, so wrapped lines match.
+ */
+export function locatePrompt(screen: string, prompt: string): "input" | "transcript" | "absent" {
+  const head = squash(prompt.replace(/\s+/g, " ").trim().slice(0, PROMPT_MATCH_CHARS));
+  if (!head) return "absent";
+  const lines = screen.split("\n");
+  const rules = lines.flatMap((l, i) => (isRule(l) ? [i] : []));
+  if (rules.length < 2) return squash(screen).includes(head) ? "input" : "absent";
+  const [top, bottom] = rules.slice(-2) as [number, number];
+  if (squash(lines.slice(top + 1, bottom).join("")).includes(head)) return "input";
+  return squash(lines.slice(0, top).join("")).includes(head) ? "transcript" : "absent";
+}
 
 export class RunManager {
   /** Runs whose agent launch is in flight in this process. */
@@ -22,9 +52,11 @@ export class RunManager {
 
   private now() { return (this.d.now ?? Date.now)(); }
 
-  private markPromptSent(rec: RunRecord) {
-    rec.promptSent = true; rec.promptSentAt = this.now(); rec.promptAcked = false;
+  /** Saves only while the state file exists, so a poll racing with cleanup does not bring the run back. */
+  private persist(rec: RunRecord): boolean {
+    if (!this.d.state.load(rec.runId)) return false;
     this.d.state.save(rec);
+    return true;
   }
 
   private record(runId: string): RunRecord {
@@ -57,7 +89,10 @@ export class RunManager {
         : (await this.d.herdr.createWorkspace(join(this.d.worktreeRoot, req.project), label)).workspaceId;
       const { tabId, paneId } = await this.d.herdr.createTab(workspaceId, worktreePath, req.runId);
 
-      const rec: RunRecord = { ...req, worktreePath, workspaceId, tabId, paneId, promptSent: false, promptSentAt: null, promptAcked: false, nudgeCount: 0, lastNudgeAt: null, createdAt: this.now() };
+      const rec: RunRecord = {
+        ...req, worktreePath, workspaceId, tabId, paneId, createdAt: this.now(),
+        promptSent: false, promptSentAt: null, promptAcked: false, promptAttempts: 0, lastPromptAttemptAt: null, promptBaseline: null,
+      };
       this.d.state.save(rec);
       return rec;
     } catch (e) {
@@ -67,17 +102,14 @@ export class RunManager {
   }
 
   /**
-   * Starts the agent (up to herdr's 60 s timeout) and sends the prompt when it is ready. While this runs,
-   * status reports the agent as present and leaves the prompt to launch.
+   * Starts the agent (up to herdr's 60 s timeout). While this runs, status reports the agent as present. The
+   * initial prompt is not sent here: status delivers it on the first idle poll after the launch, in one place
+   * where every attempt is checked against the screen and retried.
    */
   async launch(rec: RunRecord): Promise<void> {
     this.launching.add(rec.runId);
     try {
-      const started = await this.d.herdr.startAgent(rec.runId, rec.agent, rec.paneId, rec.agentArgs);
-      if (started === "ready") {
-        await this.d.herdr.prompt(rec.runId, rec.prompt);
-        this.markPromptSent(rec);
-      }
+      await this.d.herdr.startAgent(rec.runId, rec.agent, rec.paneId, rec.agentArgs);
     } finally {
       this.launching.delete(rec.runId);
     }
@@ -115,16 +147,6 @@ export class RunManager {
     // herdr may not list the agent yet; reporting it absent would make control fail the run
     if (launching && !agent) agentStatus = "unknown";
 
-    if (agent && !launching && !rec.promptSent && (agentStatus === "idle" || agentStatus === "done")) {
-      try {
-        await this.d.herdr.prompt(runId, rec.prompt);
-        this.markPromptSent(rec);
-        agentStatus = "working";
-      } catch (e) {
-        if (!(e instanceof HerdrError && e.code === "agent_blocked")) throw e;
-      }
-    }
-
     const observed = agent?.agentStatus ?? null;
     const planFile = Bun.file(join(rec.worktreePath, rec.planPath));
     const progress = (await planFile.exists()) ? parsePlanProgress(await planFile.text()) : null;
@@ -134,37 +156,68 @@ export class RunManager {
       const r = await this.d.exec(["gh", "pr", "list", "--head", rec.branch, "--state", "all", "--json", "url", "--limit", "1"], { cwd: rec.worktreePath });
       if (r.code === 0) prUrl = (JSON.parse(r.stdout) as { url: string }[])[0]?.url ?? null;
     } catch {}
+    const headSha = await this.d.git.headSha(rec.worktreePath);
+    const current: PromptBaseline = { prUrl, done: progress?.done ?? 0, headSha };
 
-    if (rec.promptSent && !rec.promptAcked) {
-      if (observed === "working" || observed === "blocked" || prUrl || (progress?.done ?? 0) > 0) {
+    if (!rec.promptAcked) {
+      if (rec.promptSent && (observed === "working" || observed === "blocked" || changedSince(rec.promptBaseline, current))) {
         rec.promptAcked = true;
-        this.d.state.save(rec);
+        this.persist(rec);
       } else if (agent && !launching && (observed === "idle" || observed === "done")) {
-        await this.nudge(rec);
+        // report working for the poll that gave the agent input, so control does not read the idle as finished
+        if (await this.deliverPrompt(rec, current)) agentStatus = "working";
       }
     }
-    // an unacknowledged prompt is not reported as sent until the nudges run out, so control does not start its idle timer
-    const nudgesSpent = rec.nudgeCount >= MAX_NUDGES && this.now() - (rec.lastNudgeAt ?? 0) >= NUDGE_AFTER_MS;
+    // an unacknowledged prompt is not reported as sent until the attempts run out, so control does not start its idle timer
+    const attemptsSpent = rec.promptAttempts >= MAX_PROMPT_ATTEMPTS && this.now() - (rec.lastPromptAttemptAt ?? 0) >= RETRY_AFTER_MS;
 
     return {
       runId, known: true, agentPresent: agent !== null || launching, agentStatus,
-      promptSent: rec.promptSent && (rec.promptAcked || nudgesSpent),
-      progress, prUrl, headSha: await this.d.git.headSha(rec.worktreePath),
+      promptSent: rec.promptSent && (rec.promptAcked || attemptsSpent),
+      progress, prUrl, headSha,
     };
   }
 
-  /** The initial prompt sits unsubmitted in the agent's input box: press Enter, at most MAX_NUDGES times. */
-  private async nudge(rec: RunRecord) {
+  /**
+   * One delivery attempt of the initial prompt to an idle agent: the first send, or a retry at least RETRY_AFTER_MS
+   * after the previous attempt, MAX_PROMPT_ATTEMPTS in total. A retry reads the screen first: prompt still in the
+   * input box -> Enter; prompt gone -> send it again; prompt already in the transcript -> acknowledged. Enter is
+   * never pressed when the prompt text is not on screen. The attempt is counted before anything is sent, so a
+   * failing herdr call cannot retry forever; agent_blocked does not count. Returns whether input went out.
+   */
+  private async deliverPrompt(rec: RunRecord, baseline: PromptBaseline): Promise<boolean> {
     const now = this.now();
-    if (rec.nudgeCount >= MAX_NUDGES) return;
-    if (now - (rec.promptSentAt ?? -Infinity) < NUDGE_AFTER_MS || now - (rec.lastNudgeAt ?? -Infinity) < NUDGE_AFTER_MS) return;
+    const first = !rec.promptSent;
+    if (!first && (rec.promptAttempts >= MAX_PROMPT_ATTEMPTS || now - (rec.lastPromptAttemptAt ?? -Infinity) < RETRY_AFTER_MS)) return false;
+
+    const before = { ...rec };
+    if (first) { rec.promptSent = true; rec.promptSentAt = now; rec.promptBaseline = baseline; }
+    rec.promptAttempts++; rec.lastPromptAttemptAt = now;
+    if (!this.persist(rec)) return false;
+
     try {
-      await this.d.herdr.sendKeys(rec.runId, ["enter"]);
+      if (first) {
+        await this.d.herdr.prompt(rec.runId, rec.prompt);
+        return true;
+      }
+      const where = locatePrompt(await this.d.herdr.readPane(rec.paneId, 40, "text"), rec.prompt);
+      if (where === "transcript") {
+        Object.assign(rec, before, { promptAcked: true });
+        this.persist(rec);
+        return false;
+      }
+      if (where === "input") await this.d.herdr.sendKeys(rec.runId, ["enter"]);
+      else await this.d.herdr.prompt(rec.runId, rec.prompt);
+      return true;
     } catch (e) {
-      if (!(e instanceof HerdrError && e.code === "agent_blocked")) throw e;
+      if (e instanceof HerdrError && e.code === "agent_blocked") {
+        Object.assign(rec, before);
+        this.persist(rec);
+      } else {
+        console.error(`run ${rec.runId}: initial prompt delivery attempt failed:`, e);
+      }
+      return false;
     }
-    rec.nudgeCount++; rec.lastNudgeAt = now;
-    this.d.state.save(rec);
   }
 
   async input(runId: string, input: RunnerInput): Promise<void> {

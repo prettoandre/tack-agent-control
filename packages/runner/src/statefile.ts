@@ -2,21 +2,34 @@ import { mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync
 import { join } from "node:path";
 import type { RunnerStartRequest } from "@tac/shared";
 
+/** What the run looked like when the initial prompt went out: only a change from it acknowledges the prompt. */
+export interface PromptBaseline { prUrl: string | null; done: number; headSha: string | null }
+
 export interface RunRecord extends RunnerStartRequest {
   worktreePath: string; workspaceId: string; tabId: string; paneId: string;
+  /** The initial prompt went out at least once. */
   promptSent: boolean; createdAt: number;
-  /** When the initial prompt was sent; null for records saved before this was tracked. */
+  /** When the initial prompt first went out; null for records saved before this was tracked. */
   promptSentAt: number | null;
-  /** The agent was seen acting on the initial prompt (working, blocked, progress or a PR). */
+  /** The agent was seen acting on the initial prompt (working, blocked, a new PR, commit or ticked box). */
   promptAcked: boolean;
-  /** Enter nudges sent for an unsubmitted initial prompt, and when the last one went out. */
-  nudgeCount: number; lastNudgeAt: number | null;
+  /** Delivery attempts of the initial prompt (the first send plus retries), and when the last one went out. */
+  promptAttempts: number; lastPromptAttemptAt: number | null;
+  promptBaseline: PromptBaseline | null;
 }
 
 /** Fills the fields records saved by older runners lack. */
 function normalize(raw: string): RunRecord {
-  const r = JSON.parse(raw) as RunRecord;
-  return { ...r, promptSentAt: r.promptSentAt ?? null, promptAcked: r.promptAcked ?? false, nudgeCount: r.nudgeCount ?? 0, lastNudgeAt: r.lastNudgeAt ?? null };
+  const { nudgeCount, lastNudgeAt, ...r } = JSON.parse(raw) as RunRecord & { nudgeCount?: number; lastNudgeAt?: number | null };
+  return {
+    ...r,
+    promptSentAt: r.promptSentAt ?? null,
+    promptAcked: r.promptAcked ?? false,
+    // a nudge-based runner counted Enter nudges after the first send
+    promptAttempts: r.promptAttempts ?? (r.promptSent ? 1 + (nudgeCount ?? 0) : 0),
+    lastPromptAttemptAt: r.lastPromptAttemptAt ?? lastNudgeAt ?? r.promptSentAt ?? null,
+    promptBaseline: r.promptBaseline ?? null,
+  };
 }
 
 const ID = /^r[a-z0-9]{8}$/;

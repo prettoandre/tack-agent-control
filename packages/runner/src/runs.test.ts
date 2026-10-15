@@ -14,6 +14,8 @@ export function fakes(opts: {
   createTabFails?: boolean;
 } = {}) {
   const clock = { now: 1_000_000 };
+  /** what `herdr pane read` returns */
+  const screen = { text: "" };
   const log: string[] = [];
   const agents = new Map<string, { agentStatus: string; paneId: string; tabId: string }>();
   let ws: { workspaceId: string; label: string }[] = [];
@@ -41,7 +43,7 @@ export function fakes(opts: {
     },
     sendKeys: async (name: string, keys: string[]) => { log.push(`keys ${name} ${keys.join(" ")}`); },
     sendText: async (pane: string, text: string) => { log.push(`text ${pane} ${text}`); },
-    readPane: async () => "screen",
+    readPane: async () => screen.text,
   };
   const git: any = {
     fetch: async () => {},
@@ -53,7 +55,7 @@ export function fakes(opts: {
   const state = new StateDir(mkdtempSync(join(tmpdir(), "tac-rm-")));
   const exec: any = async () => ({ code: 0, stdout: "[]", stderr: "" });
   const mgr = new RunManager({ herdr, git, state, worktreeRoot: "/wt", exec, now: () => clock.now });
-  return { mgr, log, agents, state, clock, exec: (cmd: (c: string[]) => any) => { (mgr as any).d.exec = async (c: string[]) => cmd(c); } };
+  return { mgr, log, agents, state, clock, screen, exec: (cmd: (c: string[]) => any) => { (mgr as any).d.exec = async (c: string[]) => cmd(c); } };
 }
 
 export const req = (runId: string): RunnerStartRequest => ({
@@ -61,14 +63,13 @@ export const req = (runId: string): RunnerStartRequest => ({
   branch: `run/${runId}-p`, agent: "claude", agentArgs: [], prompt: "execute docs/p.md",
 });
 
-test("start creates worktree, tab, agent and sends the prompt when ready", async () => {
+test("start creates worktree, tab and agent, and leaves the prompt to status", async () => {
   const { mgr, log, state } = fakes();
   await mgr.start(req("raaaaaaaa"));
   expect(log).toEqual([
-    "wt /wt/proj/raaaaaaaa run/raaaaaaaa-p", "ws tac:proj", "tab raaaaaaaa /wt/proj/raaaaaaaa",
-    "start raaaaaaaa", "prompt raaaaaaaa execute docs/p.md",
+    "wt /wt/proj/raaaaaaaa run/raaaaaaaa-p", "ws tac:proj", "tab raaaaaaaa /wt/proj/raaaaaaaa", "start raaaaaaaa",
   ]);
-  expect(state.load("raaaaaaaa")?.promptSent).toBe(true);
+  expect(state.load("raaaaaaaa")?.promptSent).toBe(false);
 });
 
 test("two runs of one project reuse the workspace and get separate worktrees", async () => {
@@ -105,15 +106,16 @@ test("cleanup cancels, removes worktree and state", async () => {
   expect(state.load("raaaaaaaa")).toBeNull();
 });
 
-test("prepare saves the run without starting the agent; launch starts it and sends the prompt", async () => {
+test("prepare saves the run without starting the agent; launch starts it without sending the prompt", async () => {
   const { mgr, log, state } = fakes();
   const rec = await mgr.prepare(req("raaaaaaaa"));
   expect(rec.worktreePath).toBe("/wt/proj/raaaaaaaa");
   expect(state.load("raaaaaaaa")?.promptSent).toBe(false);
   expect(log.some((l) => l.startsWith("start"))).toBe(false);
   await mgr.launch(rec);
-  expect(log.slice(-2)).toEqual(["start raaaaaaaa", "prompt raaaaaaaa execute docs/p.md"]);
-  expect(state.load("raaaaaaaa")?.promptSent).toBe(true);
+  expect(log.slice(-1)).toEqual(["start raaaaaaaa"]);
+  expect(log.some((l) => l.startsWith("prompt"))).toBe(false);
+  expect(state.load("raaaaaaaa")?.promptSent).toBe(false);
 });
 
 test("a prepare failure after the worktree exists removes the worktree and saves nothing", async () => {
