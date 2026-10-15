@@ -141,3 +141,20 @@ test("errors thrown inside the interval ticks are logged, never left unhandled",
   expect(logged.some((l) => l.includes("tick boom"))).toBe(true);
   expect(logged.some((l) => l.includes("health boom"))).toBe(true);
 });
+
+test("a run cancelled while its status call is in flight is not moved again by reconcile", async () => {
+  const { store, loop } = setup();
+  store.insertRun(run("raaaaaaaa", { host: "h1" }));
+  await loop.tick();
+  expect(store.getRun("raaaaaaaa")?.state).toBe("running");
+  (loop as any).d.client = () => ({
+    health: async () => true,
+    status: async (id: string) => {
+      store.updateRun(id, { state: "cancelled", finishedAt: 2_000 });   // what the cancel route does meanwhile
+      return { runId: id, known: true, agentPresent: false, agentStatus: null, promptSent: true, progress: null, prUrl: null, headSha: null };
+    },
+  });
+  await loop.tick();
+  expect(store.getRun("raaaaaaaa")?.state).toBe("cancelled");
+  expect(store.events("raaaaaaaa").filter((e) => e.kind === "error")).toEqual([]);
+});

@@ -89,7 +89,10 @@ export class ControlLoop {
         if (next.idleSince !== run.idleSince) patch.idleSince = next.idleSince;
         if (s.prUrl && s.prUrl !== run.prUrl) patch.prUrl = s.prUrl;
         if (s.progress && JSON.stringify(s.progress) !== JSON.stringify(run.progress)) patch.progress = s.progress;
-        if (Object.keys(patch).length) this.setState(run, patch);
+        if (!Object.keys(patch).length) continue;
+        // the user may have cancelled the run while the status call was in flight
+        const cur = this.d.store.getRun(run.id);
+        if (cur && !TERMINAL_STATES.includes(cur.state)) this.setState(cur, patch);
       } catch (e: any) {
         this.errorEvent(run.id, e?.code ?? "status_failed", String(e?.message ?? e));
       }
