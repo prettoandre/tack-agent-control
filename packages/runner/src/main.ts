@@ -20,5 +20,6 @@ const mgr = new RunManager({
   exec: realExec,
 });
 
-Bun.serve({ hostname, port: Number(port), fetch: createRunnerApp(mgr, token).fetch });
+// POST /runs runs git fetch and worktree add inside the request; Bun's default 10 s idle timeout is too short
+Bun.serve({ hostname, port: Number(port), idleTimeout: 120, fetch: createRunnerApp(mgr, token).fetch });
 console.log(`tac-runner listening on ${hostname}:${port}`);

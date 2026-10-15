@@ -52,3 +52,25 @@ test("input routes each type and propagates herdr codes", async () => {
   const err = await mgr.input("raaaaaaaa", { type: "prompt", text: "hi" }).catch((e) => e);
   expect(err.code).toBe("agent_blocked");
 });
+
+test("while the agent launch is in flight, status keeps the run alive and never sends the prompt", async () => {
+  let release!: () => void;
+  const f = fakes({ startGate: new Promise<void>((r) => (release = r)) });
+  const rec = await f.mgr.prepare(req("raaaaaaaa"));
+  const launched = f.mgr.launch(rec);
+
+  // herdr does not know the agent yet: it must not look gone, or control fails the run
+  let s = await f.mgr.status("raaaaaaaa");
+  expect(s).toMatchObject({ known: true, agentPresent: true, agentStatus: "unknown", promptSent: false });
+
+  // herdr already lists the agent as idle: launch owns the first prompt, so status must not send it too
+  f.agents.set("raaaaaaaa", { agentStatus: "idle", paneId: rec.paneId, tabId: rec.tabId });
+  s = await f.mgr.status("raaaaaaaa");
+  expect(s.promptSent).toBe(false);
+  expect(f.log.some((l) => l.startsWith("prompt"))).toBe(false);
+
+  release();
+  await launched;
+  expect(f.log.filter((l) => l.startsWith("prompt"))).toEqual(["prompt raaaaaaaa execute docs/p.md"]);
+  expect((await f.mgr.status("raaaaaaaa")).promptSent).toBe(true);
+});

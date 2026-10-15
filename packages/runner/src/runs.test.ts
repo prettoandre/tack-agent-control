@@ -7,7 +7,12 @@ import { RunManager } from "./runs";
 import { StateDir } from "./statefile";
 import { HerdrError } from "./herdr";
 
-export function fakes(opts: { planExists?: boolean; start?: "ready" | "blocked" } = {}) {
+export function fakes(opts: {
+  planExists?: boolean; start?: "ready" | "blocked";
+  /** startAgent waits on this before herdr knows the agent (a slow agent launch) */
+  startGate?: Promise<void>;
+  createTabFails?: boolean;
+} = {}) {
   const log: string[] = [];
   const agents = new Map<string, { agentStatus: string; paneId: string; tabId: string }>();
   let ws: { workspaceId: string; label: string }[] = [];
@@ -15,9 +20,12 @@ export function fakes(opts: { planExists?: boolean; start?: "ready" | "blocked" 
   const herdr: any = {
     listWorkspaces: async () => ws,
     createWorkspace: async (_: string, label: string) => { ws.push({ workspaceId: "w1", label }); log.push(`ws ${label}`); return { workspaceId: "w1", paneId: "w1:p1" }; },
-    createTab: async (_w: string, cwd: string, label: string) => { tab++; log.push(`tab ${label} ${cwd}`); return { tabId: `w1:t${tab}`, paneId: `w1:p${tab}` }; },
+    createTab: async (_w: string, cwd: string, label: string) => {
+      if (opts.createTabFails) throw new HerdrError("tab_failed", "no tab");
+      tab++; log.push(`tab ${label} ${cwd}`); return { tabId: `w1:t${tab}`, paneId: `w1:p${tab}` }; },
     closeTab: async (id: string) => { log.push(`close ${id}`); },
     startAgent: async (name: string, _k: string, paneId: string) => {
+      if (opts.startGate) await opts.startGate;
       const st = opts.start ?? "ready";
       agents.set(name, { agentStatus: st === "ready" ? "idle" : "blocked", paneId, tabId: "" });
       log.push(`start ${name}`); return st;
@@ -94,4 +102,23 @@ test("cleanup cancels, removes worktree and state", async () => {
   expect(log).toContain("keys raaaaaaaa ctrl+c");
   expect(log).toContain("rmwt /wt/proj/raaaaaaaa");
   expect(state.load("raaaaaaaa")).toBeNull();
+});
+
+test("prepare saves the run without starting the agent; launch starts it and sends the prompt", async () => {
+  const { mgr, log, state } = fakes();
+  const rec = await mgr.prepare(req("raaaaaaaa"));
+  expect(rec.worktreePath).toBe("/wt/proj/raaaaaaaa");
+  expect(state.load("raaaaaaaa")?.promptSent).toBe(false);
+  expect(log.some((l) => l.startsWith("start"))).toBe(false);
+  await mgr.launch(rec);
+  expect(log.slice(-2)).toEqual(["start raaaaaaaa", "prompt raaaaaaaa execute docs/p.md"]);
+  expect(state.load("raaaaaaaa")?.promptSent).toBe(true);
+});
+
+test("a prepare failure after the worktree exists removes the worktree and saves nothing", async () => {
+  const { mgr, log, state } = fakes({ createTabFails: true });
+  const err = await mgr.prepare(req("raaaaaaaa")).catch((e) => e);
+  expect(err.code).toBe("tab_failed");
+  expect(log).toContain("rmwt /wt/proj/raaaaaaaa");
+  expect(state.list()).toEqual([]);
 });

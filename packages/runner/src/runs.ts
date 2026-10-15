@@ -12,6 +12,9 @@ export class RunNotFound extends Error {
 export interface RunManagerDeps { herdr: Herdr; git: Git; state: StateDir; worktreeRoot: string; exec: Exec }
 
 export class RunManager {
+  /** Runs whose agent launch is in flight in this process. */
+  private launching = new Set<string>();
+
   constructor(private d: RunManagerDeps) {}
 
   private record(runId: string): RunRecord {
@@ -25,29 +28,55 @@ export class RunManager {
     return this.d.git.planExists(repoPath, baseBranch, planPath);
   }
 
-  async start(req: RunnerStartRequest): Promise<RunRecord> {
+  /**
+   * Everything up to a saved state file: plan check, worktree, workspace, tab. Fast enough for one HTTP request.
+   * A failure after the worktree exists removes it again, so a retry does not find the branch checked out.
+   */
+  async prepare(req: RunnerStartRequest): Promise<RunRecord> {
     if (!(await this.checkPlan(req.repoPath, req.baseBranch, req.planPath)))
       throw new HerdrError("plan_not_found", `${req.planPath} is not on origin/${req.baseBranch}`);
 
     const worktreePath = join(this.d.worktreeRoot, req.project, req.runId);
     await this.d.git.addWorktree(req.repoPath, worktreePath, req.branch, req.baseBranch);
 
-    const label = `tac:${req.project}`;
-    const found = (await this.d.herdr.listWorkspaces()).find((w) => w.label === label);
-    const workspaceId = found
-      ? found.workspaceId
-      : (await this.d.herdr.createWorkspace(join(this.d.worktreeRoot, req.project), label)).workspaceId;
-    const { tabId, paneId } = await this.d.herdr.createTab(workspaceId, worktreePath, req.runId);
+    try {
+      const label = `tac:${req.project}`;
+      const found = (await this.d.herdr.listWorkspaces()).find((w) => w.label === label);
+      const workspaceId = found
+        ? found.workspaceId
+        : (await this.d.herdr.createWorkspace(join(this.d.worktreeRoot, req.project), label)).workspaceId;
+      const { tabId, paneId } = await this.d.herdr.createTab(workspaceId, worktreePath, req.runId);
 
-    const rec: RunRecord = { ...req, worktreePath, workspaceId, tabId, paneId, promptSent: false, createdAt: Date.now() };
-    this.d.state.save(rec);
-
-    const started = await this.d.herdr.startAgent(req.runId, req.agent, paneId, req.agentArgs);
-    if (started === "ready") {
-      await this.d.herdr.prompt(req.runId, req.prompt);
-      rec.promptSent = true;
+      const rec: RunRecord = { ...req, worktreePath, workspaceId, tabId, paneId, promptSent: false, createdAt: Date.now() };
       this.d.state.save(rec);
+      return rec;
+    } catch (e) {
+      try { await this.d.git.removeWorktree(req.repoPath, worktreePath); } catch {}
+      throw e;
     }
+  }
+
+  /**
+   * Starts the agent (up to herdr's 60 s timeout) and sends the prompt when it is ready. While this runs,
+   * status reports the agent as present and leaves the prompt to launch.
+   */
+  async launch(rec: RunRecord): Promise<void> {
+    this.launching.add(rec.runId);
+    try {
+      const started = await this.d.herdr.startAgent(rec.runId, rec.agent, rec.paneId, rec.agentArgs);
+      if (started === "ready") {
+        await this.d.herdr.prompt(rec.runId, rec.prompt);
+        rec.promptSent = true;
+        this.d.state.save(rec);
+      }
+    } finally {
+      this.launching.delete(rec.runId);
+    }
+  }
+
+  async start(req: RunnerStartRequest): Promise<RunRecord> {
+    const rec = await this.prepare(req);
+    await this.launch(rec);
     return rec;
   }
 
@@ -73,8 +102,11 @@ export class RunManager {
 
     const agent = await this.d.herdr.getAgent(runId);
     let agentStatus = agent?.agentStatus ?? null;
+    const launching = this.launching.has(runId);
+    // herdr may not list the agent yet; reporting it absent would make control fail the run
+    if (launching && !agent) agentStatus = "unknown";
 
-    if (agent && !rec.promptSent && (agentStatus === "idle" || agentStatus === "done")) {
+    if (agent && !launching && !rec.promptSent && (agentStatus === "idle" || agentStatus === "done")) {
       try {
         await this.d.herdr.prompt(runId, rec.prompt);
         rec.promptSent = true;
@@ -95,7 +127,7 @@ export class RunManager {
     } catch {}
 
     return {
-      runId, known: true, agentPresent: agent !== null, agentStatus, promptSent: rec.promptSent,
+      runId, known: true, agentPresent: agent !== null || launching, agentStatus, promptSent: rec.promptSent,
       progress, prUrl, headSha: await this.d.git.headSha(rec.worktreePath),
     };
   }

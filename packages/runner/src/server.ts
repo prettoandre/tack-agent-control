@@ -44,7 +44,9 @@ export function createRunnerApp(mgr: RunManager, token: string) {
     return c.json({ exists: await mgr.checkPlan(b.repoPath, b.baseBranch, b.planPath) });
   });
   app.post("/runs", async (c) => {
-    const rec = await mgr.start(StartReq.parse(await c.req.json()));
+    const rec = await mgr.prepare(StartReq.parse(await c.req.json()));
+    // the agent launch can take up to herdr's 60 s timeout: finish it in the background; status reports the outcome
+    mgr.launch(rec).catch((e) => console.error(`run ${rec.runId}: agent launch failed:`, e));
     return c.json({ runId: rec.runId, worktreePath: rec.worktreePath }, 201);
   });
   app.get("/runs/:id/status", async (c) => c.json(await mgr.status(id(c.req.param("id")))));

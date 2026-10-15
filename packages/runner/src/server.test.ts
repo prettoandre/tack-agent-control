@@ -40,3 +40,24 @@ test("run ids that are not valid are rejected", async () => {
   const app = createRunnerApp(fakes().mgr, "s3cret");
   expect((await app.request("/runs/..%2Fx/status", { headers: auth })).status).toBe(400);
 });
+
+test("POST /runs answers 201 once the run is prepared, without waiting for the agent launch", async () => {
+  let release!: () => void;
+  const f = fakes({ startGate: new Promise<void>((r) => (release = r)) });
+  const app = createRunnerApp(f.mgr, "s3cret");
+  const r = await Promise.race([
+    app.request("/runs", { method: "POST", headers: auth, body: JSON.stringify(req("raaaaaaaa")) }),
+    Bun.sleep(1_000).then(() => null),
+  ]);
+  release();   // let a blocked synchronous start finish too, so nothing dangles after a failure
+  expect(r?.status).toBe(201);
+  expect(await r!.json()).toEqual({ runId: "raaaaaaaa", worktreePath: "/wt/proj/raaaaaaaa" });
+
+  let s: any;
+  for (let i = 0; i < 100; i++) {
+    s = await (await app.request("/runs/raaaaaaaa/status", { headers: auth })).json();
+    if (s.promptSent) break;
+    await Bun.sleep(5);
+  }
+  expect(s.promptSent).toBe(true);
+});
