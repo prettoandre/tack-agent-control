@@ -13,7 +13,8 @@ export interface DispatchDeps {
 }
 
 export function buildPrompt(planPath: string) {
-  return `Execute the plan at ${planPath} using the superpowers:subagent-driven-development skill. When all tasks are done, open a pull request from the current branch.`;
+  return `Execute the plan at ${planPath} using the superpowers:subagent-driven-development skill. When all tasks are done, open a pull request from the current branch. ` +
+    `As you complete each step, mark its checkbox in the plan file as done (change "- [ ]" to "- [x]") and commit the plan file with your work.`;
 }
 
 export async function dispatch(d: DispatchDeps, input: { project: string; planPath: string; host?: string; agent?: AgentKind }): Promise<Run> {

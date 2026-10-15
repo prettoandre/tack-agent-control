@@ -32,3 +32,12 @@ test("prompt names the plan and the skill", () => {
   expect(buildPrompt("docs/p.md")).toContain("docs/p.md");
   expect(buildPrompt("docs/p.md")).toContain("superpowers:subagent-driven-development");
 });
+
+test("prompt asks the agent to tick the plan checkboxes and commit the plan file", () => {
+  expect(buildPrompt("docs/p.md")).toBe(
+    "Execute the plan at docs/p.md using the superpowers:subagent-driven-development skill. " +
+    "When all tasks are done, open a pull request from the current branch. " +
+    'As you complete each step, mark its checkbox in the plan file as done (change "- [ ]" to "- [x]") ' +
+    "and commit the plan file with your work.",
+  );
+});
