@@ -9,13 +9,23 @@ export class RunNotFound extends Error {
   constructor(runId: string) { super(`run ${runId} not found`); }
 }
 
-export interface RunManagerDeps { herdr: Herdr; git: Git; state: StateDir; worktreeRoot: string; exec: Exec }
+export interface RunManagerDeps { herdr: Herdr; git: Git; state: StateDir; worktreeRoot: string; exec: Exec; now?: () => number }
+
+const NUDGE_AFTER_MS = 5000;
+const MAX_NUDGES = 3;
 
 export class RunManager {
   /** Runs whose agent launch is in flight in this process. */
   private launching = new Set<string>();
 
   constructor(private d: RunManagerDeps) {}
+
+  private now() { return (this.d.now ?? Date.now)(); }
+
+  private markPromptSent(rec: RunRecord) {
+    rec.promptSent = true; rec.promptSentAt = this.now(); rec.promptAcked = false;
+    this.d.state.save(rec);
+  }
 
   private record(runId: string): RunRecord {
     const r = this.d.state.load(runId);
@@ -47,7 +57,7 @@ export class RunManager {
         : (await this.d.herdr.createWorkspace(join(this.d.worktreeRoot, req.project), label)).workspaceId;
       const { tabId, paneId } = await this.d.herdr.createTab(workspaceId, worktreePath, req.runId);
 
-      const rec: RunRecord = { ...req, worktreePath, workspaceId, tabId, paneId, promptSent: false, createdAt: Date.now() };
+      const rec: RunRecord = { ...req, worktreePath, workspaceId, tabId, paneId, promptSent: false, promptSentAt: null, promptAcked: false, nudgeCount: 0, lastNudgeAt: null, createdAt: this.now() };
       this.d.state.save(rec);
       return rec;
     } catch (e) {
@@ -66,8 +76,7 @@ export class RunManager {
       const started = await this.d.herdr.startAgent(rec.runId, rec.agent, rec.paneId, rec.agentArgs);
       if (started === "ready") {
         await this.d.herdr.prompt(rec.runId, rec.prompt);
-        rec.promptSent = true;
-        this.d.state.save(rec);
+        this.markPromptSent(rec);
       }
     } finally {
       this.launching.delete(rec.runId);
@@ -109,14 +118,14 @@ export class RunManager {
     if (agent && !launching && !rec.promptSent && (agentStatus === "idle" || agentStatus === "done")) {
       try {
         await this.d.herdr.prompt(runId, rec.prompt);
-        rec.promptSent = true;
-        this.d.state.save(rec);
+        this.markPromptSent(rec);
         agentStatus = "working";
       } catch (e) {
         if (!(e instanceof HerdrError && e.code === "agent_blocked")) throw e;
       }
     }
 
+    const observed = agent?.agentStatus ?? null;
     const planFile = Bun.file(join(rec.worktreePath, rec.planPath));
     const progress = (await planFile.exists()) ? parsePlanProgress(await planFile.text()) : null;
 
@@ -126,10 +135,36 @@ export class RunManager {
       if (r.code === 0) prUrl = (JSON.parse(r.stdout) as { url: string }[])[0]?.url ?? null;
     } catch {}
 
+    if (rec.promptSent && !rec.promptAcked) {
+      if (observed === "working" || observed === "blocked" || prUrl || (progress?.done ?? 0) > 0) {
+        rec.promptAcked = true;
+        this.d.state.save(rec);
+      } else if (agent && !launching && (observed === "idle" || observed === "done")) {
+        await this.nudge(rec);
+      }
+    }
+    // an unacknowledged prompt is not reported as sent until the nudges run out, so control does not start its idle timer
+    const nudgesSpent = rec.nudgeCount >= MAX_NUDGES && this.now() - (rec.lastNudgeAt ?? 0) >= NUDGE_AFTER_MS;
+
     return {
-      runId, known: true, agentPresent: agent !== null || launching, agentStatus, promptSent: rec.promptSent,
+      runId, known: true, agentPresent: agent !== null || launching, agentStatus,
+      promptSent: rec.promptSent && (rec.promptAcked || nudgesSpent),
       progress, prUrl, headSha: await this.d.git.headSha(rec.worktreePath),
     };
+  }
+
+  /** The initial prompt sits unsubmitted in the agent's input box: press Enter, at most MAX_NUDGES times. */
+  private async nudge(rec: RunRecord) {
+    const now = this.now();
+    if (rec.nudgeCount >= MAX_NUDGES) return;
+    if (now - (rec.promptSentAt ?? -Infinity) < NUDGE_AFTER_MS || now - (rec.lastNudgeAt ?? -Infinity) < NUDGE_AFTER_MS) return;
+    try {
+      await this.d.herdr.sendKeys(rec.runId, ["enter"]);
+    } catch (e) {
+      if (!(e instanceof HerdrError && e.code === "agent_blocked")) throw e;
+    }
+    rec.nudgeCount++; rec.lastNudgeAt = now;
+    this.d.state.save(rec);
   }
 
   async input(runId: string, input: RunnerInput): Promise<void> {

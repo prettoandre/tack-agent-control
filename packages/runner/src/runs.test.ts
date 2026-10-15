@@ -13,6 +13,7 @@ export function fakes(opts: {
   startGate?: Promise<void>;
   createTabFails?: boolean;
 } = {}) {
+  const clock = { now: 1_000_000 };
   const log: string[] = [];
   const agents = new Map<string, { agentStatus: string; paneId: string; tabId: string }>();
   let ws: { workspaceId: string; label: string }[] = [];
@@ -51,8 +52,8 @@ export function fakes(opts: {
   };
   const state = new StateDir(mkdtempSync(join(tmpdir(), "tac-rm-")));
   const exec: any = async () => ({ code: 0, stdout: "[]", stderr: "" });
-  const mgr = new RunManager({ herdr, git, state, worktreeRoot: "/wt", exec });
-  return { mgr, log, agents, state };
+  const mgr = new RunManager({ herdr, git, state, worktreeRoot: "/wt", exec, now: () => clock.now });
+  return { mgr, log, agents, state, clock, exec: (cmd: (c: string[]) => any) => { (mgr as any).d.exec = async (c: string[]) => cmd(c); } };
 }
 
 export const req = (runId: string): RunnerStartRequest => ({

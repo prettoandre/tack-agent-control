@@ -56,8 +56,9 @@ test("POST /runs answers 201 once the run is prepared, without waiting for the a
   let s: any;
   for (let i = 0; i < 100; i++) {
     s = await (await app.request("/runs/raaaaaaaa/status", { headers: auth })).json();
-    if (s.promptSent) break;
+    if (f.state.load("raaaaaaaa")?.promptSent) break;
     await Bun.sleep(5);
   }
-  expect(s.promptSent).toBe(true);
+  expect(f.state.load("raaaaaaaa")?.promptSent).toBe(true);
+  expect(s.known).toBe(true);
 });
