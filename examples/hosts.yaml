@@ -1,0 +1,4 @@
+hosts:
+  devbox-homelab:
+    url: http://devbox-local.tail39ebd.ts.net:7781
+    maxRuns: 2

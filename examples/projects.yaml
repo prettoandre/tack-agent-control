@@ -1,0 +1,7 @@
+projects:
+  tac-e2e:
+    host: devbox-homelab
+    repoPath: /home/apretto/workspace/tac-e2e
+    baseBranch: main
+    agent: claude
+    agentArgs: ["--model", "haiku"]
