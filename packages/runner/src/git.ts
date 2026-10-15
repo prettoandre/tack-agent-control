@@ -30,7 +30,7 @@ export class Git {
     mkdirSync(dirname(worktreePath), { recursive: true });
     const exists = (await this.run(repoPath, ["rev-parse", "--verify", "--quiet", `refs/heads/${branch}`])).code === 0;
     if (exists) await this.ok(repoPath, ["worktree", "add", worktreePath, branch]);
-    else await this.ok(repoPath, ["worktree", "add", "-b", branch, worktreePath, `origin/${baseBranch}`]);
+    else await this.ok(repoPath, ["worktree", "add", "--no-track", "-b", branch, worktreePath, `origin/${baseBranch}`]);
   }
 
   async removeWorktree(repoPath: string, worktreePath: string) {

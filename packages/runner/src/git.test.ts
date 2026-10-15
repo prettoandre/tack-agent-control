@@ -59,3 +59,10 @@ test("re-adding an existing branch keeps its commits", async () => {
   await git.addWorktree(clone, w, "run/rc-p", "main");
   expect(await git.headSha(w)).toBe(sha);
 });
+
+test("a new run branch has no upstream, so git never suggests pushing to the base branch", async () => {
+  const w = join(root, "wt/rd");
+  await git.addWorktree(clone, w, "run/rd-p", "main");
+  const r = await realExec(["git", "rev-parse", "--abbrev-ref", "run/rd-p@{upstream}"], { cwd: w });
+  expect(r.code).not.toBe(0);
+});
