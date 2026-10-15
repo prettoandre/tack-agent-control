@@ -1,2 +1,2 @@
-{ "name": "@tac/cli", "private": true, "type": "module", "main": "src/index.ts",
+{ "name": "@tac/cli", "private": true, "type": "module", "main": "src/index.ts", "bin": { "tac": "src/tac.ts" },
   "dependencies": { "@tac/shared": "workspace:*" } }
