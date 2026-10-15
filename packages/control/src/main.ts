@@ -4,7 +4,7 @@ import type { RunnerInput } from "@tac/shared";
 import { loadConfig } from "./config";
 import { ControlLoop } from "./loop";
 import { HttpRunnerClient, type RunnerClient } from "./runner-client";
-import { createControlApp, InputSchema, loginOf, sendInput } from "./server";
+import { createControlApp, InputSchema, loginOf, originAllowed, sendInput } from "./server";
 import { Store } from "./store";
 
 const env = process.env;
@@ -34,6 +34,9 @@ Bun.serve<WsData>({
     if (m) {
       const login = loginOf(deps, req.headers.get("Tailscale-User-Login") ?? undefined);
       if (!login) return new Response("unauthorized", { status: 401 });
+      if (!originAllowed({ origin: req.headers.get("Origin"), host: req.headers.get("Host"), forwardedHost: req.headers.get("X-Forwarded-Host") })) {
+        return new Response("forbidden origin", { status: 403 });
+      }
       if (!store.getRun(m[1]!)) return new Response("not found", { status: 404 });
       return server.upgrade(req, { data: { runId: m[1]!, login } }) ? undefined : new Response("upgrade failed", { status: 400 });
     }

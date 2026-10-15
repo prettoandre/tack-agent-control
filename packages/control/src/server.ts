@@ -28,6 +28,14 @@ export function loginOf(d: Pick<ControlDeps, "allowedLogins" | "devLogin">, head
   return login && d.allowedLogins.includes(login) ? login : null;
 }
 
+/** CSRF guard: a browser Origin must match the Host (or X-Forwarded-Host) the request came in on. */
+export function originAllowed(h: { origin?: string | null; host?: string | null; forwardedHost?: string | null }): boolean {
+  if (!h.origin) return true;
+  let originHost: string;
+  try { originHost = new URL(h.origin).host; } catch { return false; }
+  return originHost === h.host || originHost === h.forwardedHost;
+}
+
 /** Audit, then forward. Returns null on success or { status, code, message } on failure. */
 export async function sendInput(d: ControlDeps, runId: string, input: RunnerInput, login: string) {
   const run = d.store.getRun(runId);
@@ -58,6 +66,19 @@ export function createControlApp(d: ControlDeps) {
     const login = loginOf(d, c.req.header("Tailscale-User-Login"));
     if (!login) return c.json(err("unauthorized"), 401);
     c.set("login", login);
+    await next();
+  });
+
+  app.use("/api/*", async (c, next) => {
+    const m = c.req.method;
+    if (m === "GET" || m === "HEAD") return next();
+    const origin = c.req.header("Origin");
+    if (!originAllowed({ origin, host: c.req.header("Host"), forwardedHost: c.req.header("X-Forwarded-Host") })) {
+      return c.json(err("forbidden_origin"), 403);
+    }
+    if (m === "POST" && !(c.req.header("content-type") ?? "").toLowerCase().startsWith("application/json")) {
+      return c.json(err("unsupported_media_type"), 415);
+    }
     await next();
   });
 

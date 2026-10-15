@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { RunnerCallError } from "./runner-client";
-import { createControlApp } from "./server";
+import { createControlApp, originAllowed } from "./server";
 import { Store } from "./store";
 import { run } from "./store.test";
 
@@ -55,4 +55,28 @@ test("retry reuses the branch; cleanup needs a terminal run", async () => {
   expect(r.state).toBe("queued");
   store.insertRun(run("rbbbbbbbb", { state: "running" }));
   expect((await app.request("/api/runs/rbbbbbbbb/cleanup", { method: "POST", headers: H })).status).toBe(409);
+});
+
+test("originAllowed accepts absent or same-host origins only", () => {
+  expect(originAllowed({})).toBe(true);
+  expect(originAllowed({ origin: "", host: "c.ts.net" })).toBe(true);
+  expect(originAllowed({ origin: "https://c.ts.net", host: "c.ts.net" })).toBe(true);
+  expect(originAllowed({ origin: "https://c.ts.net", host: "127.0.0.1:7780", forwardedHost: "c.ts.net" })).toBe(true);
+  expect(originAllowed({ origin: "https://evil.example", host: "c.ts.net" })).toBe(false);
+  expect(originAllowed({ origin: "not a url", host: "c.ts.net" })).toBe(false);
+});
+
+test("cross-origin posts are rejected without side effects", async () => {
+  const { app, store } = setup();
+  const r = await app.request("/api/runs", { method: "POST", headers: { ...H, Origin: "https://evil.example", Host: "c.ts.net" }, body: JSON.stringify({ project: "p", planPath: "docs/x.md" }) });
+  expect(r.status).toBe(403);
+  expect((await r.json()).error.code).toBe("forbidden_origin");
+  expect(store.listRuns({})).toEqual([]);
+});
+
+test("non-JSON posts are rejected with 415", async () => {
+  const { app } = setup();
+  const r = await app.request("/api/runs", { method: "POST", headers: { ...H, "content-type": "text/plain" }, body: JSON.stringify({ project: "p", planPath: "docs/x.md" }) });
+  expect(r.status).toBe(415);
+  expect((await r.json()).error.code).toBe("unsupported_media_type");
 });
