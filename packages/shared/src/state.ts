@@ -2,7 +2,7 @@ import type { RunState } from "./types";
 
 const ALLOWED: Record<RunState, readonly RunState[]> = {
   queued: ["preparing", "cancelled", "failed"],
-  preparing: ["running", "waiting_input", "failed", "cancelled", "unknown"],
+  preparing: ["running", "waiting_input", "finishing", "succeeded", "failed", "cancelled", "unknown"],
   running: ["waiting_input", "finishing", "succeeded", "failed", "cancelled", "unknown"],
   waiting_input: ["running", "finishing", "succeeded", "failed", "cancelled", "unknown"],
   finishing: ["running", "waiting_input", "succeeded", "needs_attention", "failed", "cancelled", "unknown"],

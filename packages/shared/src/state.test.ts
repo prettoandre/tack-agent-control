@@ -30,3 +30,8 @@ test("needs_attention recovers when the agent works again or a PR shows up", () 
   expect(canTransition("needs_attention", "running")).toBe(true);
   expect(canTransition("needs_attention", "succeeded")).toBe(true);
 });
+
+test("preparing can go straight to finishing or succeeded (prompt sent at start, first poll sees idle)", () => {
+  expect(canTransition("preparing", "finishing")).toBe(true);
+  expect(canTransition("preparing", "succeeded")).toBe(true);
+});
