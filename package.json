@@ -1,0 +1,10 @@
+{
+  "name": "tack-agent-control",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc -p packages/shared && tsc -p packages/runner && tsc -p packages/control && tsc -p packages/cli"
+  },
+  "devDependencies": { "typescript": "^5.6.0", "@types/bun": "latest" }
+}
