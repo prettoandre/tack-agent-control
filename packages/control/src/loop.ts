@@ -2,7 +2,7 @@ import { ACTIVE_STATES, TERMINAL_STATES, type Run } from "@tac/shared";
 import type { HostConfig, ProjectConfig } from "./config";
 import { decide } from "./decide";
 import { buildPrompt } from "./dispatch";
-import type { RunnerClient } from "./runner-client";
+import { RunnerCallError, type RunnerClient } from "./runner-client";
 import type { Store } from "./store";
 
 export interface LoopDeps {
@@ -52,7 +52,7 @@ export class ControlLoop {
         const run = this.d.store.oldestQueued(host);
         if (!run) break;
         const p = this.d.projects.get(run.project);
-        const started = this.setState(run, { state: "preparing", startedAt: this.d.now() });
+        this.setState(run, { state: "preparing", startedAt: this.d.now() });
         try {
           if (!p) throw Object.assign(new Error(`unknown project ${run.project}`), { code: "unknown_project" });
           await this.d.client(host).start({
@@ -60,8 +60,15 @@ export class ControlLoop {
             planPath: run.planPath, branch: run.branch, agent: run.agent, agentArgs: p.agentArgs, prompt: buildPrompt(run.planPath),
           });
         } catch (e: any) {
-          this.setState(started, { state: "failed" });
-          this.d.store.addEvent({ runId: run.id, at: this.d.now(), kind: "error", source: "control", data: { code: e?.code ?? "start_failed", message: String(e?.message ?? e) } });
+          // The runner answered with an error (or the project is unknown): the start failed. Any other error
+          // (connection reset, timeout) leaves the outcome open: keep preparing, and decide() fails the run
+          // after 60 s if the runner never learned about it.
+          const fatal = !p || e instanceof RunnerCallError;
+          const cur = this.d.store.getRun(run.id);
+          // the user may have cancelled the run while the start was in flight
+          if (fatal && cur && !TERMINAL_STATES.includes(cur.state)) this.setState(cur, { state: "failed" });
+          const code = typeof e?.code === "string" ? e.code : fatal ? "start_failed" : "start_unreachable";
+          this.d.store.addEvent({ runId: run.id, at: this.d.now(), kind: "error", source: "control", data: { code, message: String(e?.message ?? e) } });
         }
       }
     }
@@ -96,7 +103,12 @@ export class ControlLoop {
   }
 
   start() {
-    this.timers.push(setInterval(() => void this.tick(), 5_000), setInterval(() => void this.healthTick(), 15_000));
+    // Bun exits on an unhandled rejection: a failed tick must only be logged
+    const log = (what: string) => (e: unknown) => console.error(`control loop ${what} failed:`, e);
+    this.timers.push(
+      setInterval(() => void this.tick().catch(log("tick")), 5_000),
+      setInterval(() => void this.healthTick().catch(log("health check")), 15_000),
+    );
   }
   stop() { for (const t of this.timers) clearInterval(t); this.timers = []; }
 }
