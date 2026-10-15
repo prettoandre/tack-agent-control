@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Terminal } from "@xterm/xterm";
-import type { Run, RunEvent, RunnerInput } from "@tac/shared";
+import type { Run, RunEvent, RunnerInput, RunState } from "@tac/shared";
 import { getJson, keyFor, post, progressLabel, stateColor } from "./api";
+
+function Badge({ state }: { state: RunState }) {
+  return <span className="badge"><span className="dot" style={{ background: stateColor(state) }} />{state}</span>;
+}
 
 function age(ms: number) {
   const m = Math.floor((Date.now() - ms) / 60_000);
@@ -23,8 +27,9 @@ function RunList({ onOpen }: { onOpen: (id: string) => void }) {
       <h2>Runs</h2>
       {sorted.map((r) => (
         <div key={r.id} className="row" onClick={() => onOpen(r.id)}>
-          <span className="badge" style={{ background: stateColor(r.state) }}>{r.state}</span>
+          <Badge state={r.state} />
           <strong>{r.project}</strong>
+          <span className="muted mono">{r.id}</span>
           <span className="muted">{r.planPath.split("/").pop()}</span>
           <span className="muted">{progressLabel(r.progress)}</span>
           <span className="muted">{r.host} · {age(r.createdAt)}</span>
@@ -48,7 +53,7 @@ function RunDetail({ id, onBack }: { id: string; onBack: () => void }) {
     const load = () => getJson<{ run: Run; events: RunEvent[] }>(`/api/runs/${id}`).then(setData).catch((e) => setError(e.message));
     load();
     const t = setInterval(load, 3000);
-    const term = new Terminal({ convertEol: true, fontSize: 13, scrollback: 2000 });
+    const term = new Terminal({ convertEol: true, fontSize: 13, fontFamily: '"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace', theme: { background: "#0f1011", foreground: "#f7f8f8" }, scrollback: 2000 });
     term.open(termEl.current!);
     term.onKey(({ domEvent }) => {
       const k = keyFor(domEvent);
@@ -70,16 +75,17 @@ function RunDetail({ id, onBack }: { id: string; onBack: () => void }) {
   return (
     <div>
       <div className="bar"><button onClick={onBack}>← Runs</button>
-        {data && <span className="badge" style={{ background: stateColor(data.run.state) }}>{data.run.state}</span>}
+        {data && <Badge state={data.run.state} />}
         {data && <strong>{data.run.project}</strong>}
+        {data && <span className="muted mono">{data.run.id}</span>}
         {data && <span className="muted">{progressLabel(data.run.progress)}</span>}
         {data?.run.prUrl && <a href={data.run.prUrl} target="_blank">PR</a>}
       </div>
       {error && <div className="err">{error}</div>}
-      <div id="term" ref={termEl} />
+      <div id="term" className="card" ref={termEl} />
       <div className="bar">
         <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Message to the agent" />
-        <button onClick={() => { if (text) { send({ type: "prompt", text }); setText(""); } }}>Send</button>
+        <button className="primary" onClick={() => { if (text) { send({ type: "prompt", text }); setText(""); } }}>Send</button>
       </div>
       <div className="bar">
         {["up", "down", "enter", "esc", "ctrl+c"].map((k) => <button key={k} onClick={() => send({ type: "keys", keys: [k] })}>{k}</button>)}
