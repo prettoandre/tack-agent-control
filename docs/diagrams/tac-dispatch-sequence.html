@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tack-agent-control · Dispatch sequence</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #0A0B0D;
+      --color-paper-2: #111317;
+      --color-ink:     #E8EAED;
+      --color-muted:   #9BA1AB;
+      --color-soft:    #8B919B;
+      --color-rule:    rgba(232,234,237,0.10);
+      --color-accent:  #8B8CFF;
+      --color-link:    #5AA9FF;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body { font-family: var(--font-sans); background: var(--color-paper); color: var(--color-ink); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 3rem 2rem; }
+    .frame { max-width: 1360px; width: 100%; min-width: 0; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    .eyebrow { font-family: var(--font-mono); font-size: 0.66rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 0.5rem; }
+    h1 { font-family: var(--font-serif); font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem); font-weight: 400; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 0.5rem; }
+    .subtitle { color: var(--color-muted); font-size: 0.9rem; line-height: 1.5; max-width: 72ch; margin-bottom: 1.5rem; }
+    .notes { margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px solid var(--color-rule); font-family: var(--font-mono); font-size: 0.7rem; line-height: 1.7; color: var(--color-muted); max-width: 110ch; padding-left: 1.5rem; }
+    .notes code { color: var(--color-ink); }
+    svg { width: 100%; min-width: 1280px; display: block; }
+    @media print {
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Sequence · tack-agent-control</p>
+    <h1>One run, from tac dispatch to a pull request</h1>
+    <p class="subtitle">The run's state (chips on control's lifeline) changes only when control reads verifiable facts from the runner: herdr's agent state, the plan's checkboxes, the branch head and an existing PR. The agent's own report is never trusted.</p>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 1280 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="tac-dispatch-sequence-title tac-dispatch-sequence-desc">
+        <title id="tac-dispatch-sequence-title">One run, from tac dispatch to a pull request</title>
+        <desc id="tac-dispatch-sequence-desc">Sequence of one run: the owner dispatches, control checks the plan is on origin, queues the run and asks the runner to prepare it; the runner starts the agent in a herdr pane; a five-second status poll delivers the prompt and reports facts; the owner answers a trust or permission prompt from the phone; the agent pushes and opens a PR, the runner finds it and control marks the run succeeded.</desc>
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#9BA1AB"/></marker>
+          <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#8B8CFF"/></marker>
+          <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#5AA9FF"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#0A0B0D"/>
+
+        <!-- Fragments (behind lifelines and messages) -->
+        <rect x="376" y="360" width="568" height="136" rx="4" fill="rgba(232,234,237,0.04)" stroke="rgba(232,234,237,0.22)" stroke-width="1"/>
+        <rect x="376" y="360" width="40" height="16" rx="2" fill="#0A0B0D" stroke="rgba(232,234,237,0.22)" stroke-width="1"/>
+        <text x="396" y="372" fill="#9BA1AB" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">LOOP</text>
+        <text x="428" y="372" fill="#9BA1AB" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.04em">[every 5 s, until the run is terminal]</text>
+
+        <rect x="56" y="536" width="888" height="152" rx="4" fill="rgba(232,234,237,0.04)" stroke="rgba(232,234,237,0.22)" stroke-width="1"/>
+        <rect x="56" y="536" width="40" height="16" rx="2" fill="#0A0B0D" stroke="rgba(232,234,237,0.22)" stroke-width="1"/>
+        <text x="76" y="548" fill="#9BA1AB" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">OPT</text>
+        <rect x="64" y="560" width="224" height="12" rx="2" fill="#131416"/>
+        <text x="68" y="568" fill="#9BA1AB" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.04em">[agent blocked: trust dialog or permission]</text>
+
+        <!-- Lifelines -->
+        <g stroke="rgba(232,234,237,0.22)" stroke-width="1" stroke-dasharray="3,3">
+          <line x1="140" y1="128" x2="140" y2="812"/>
+          <line x1="400" y1="128" x2="400" y2="812"/>
+          <line x1="660" y1="128" x2="660" y2="812"/>
+          <line x1="920" y1="128" x2="920" y2="812"/>
+          <line x1="1160" y1="128" x2="1160" y2="812"/>
+        </g>
+
+        <!-- Messages (time flows down) -->
+        <line x1="140" y1="168" x2="400" y2="168" stroke="#5AA9FF" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <line x1="400" y1="208" x2="660" y2="208" stroke="#5AA9FF" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <line x1="400" y1="276" x2="660" y2="276" stroke="#5AA9FF" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <line x1="660" y1="340" x2="920" y2="340" stroke="#9BA1AB" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="400" y1="416" x2="660" y2="416" stroke="#5AA9FF" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <line x1="660" y1="448" x2="920" y2="448" stroke="#9BA1AB" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="660" y1="480" x2="400" y2="480" stroke="#9BA1AB" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+        <line x1="140" y1="608" x2="400" y2="608" stroke="#5AA9FF" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <line x1="400" y1="640" x2="660" y2="640" stroke="#5AA9FF" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <line x1="660" y1="672" x2="920" y2="672" stroke="#9BA1AB" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="920" y1="724" x2="1160" y2="724" stroke="#8B8CFF" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+        <line x1="660" y1="756" x2="1160" y2="756" stroke="#5AA9FF" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+
+        <!-- Message labels -->
+        <g font-family="'Geist Mono', monospace" font-size="8" text-anchor="middle" letter-spacing="0.06em">
+          <rect x="226" y="148" width="88" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="270" y="157" fill="#5AA9FF">1 TAC DISPATCH</text>
+          <rect x="492" y="188" width="76" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="530" y="197" fill="#5AA9FF">2 CHECK-PLAN</text>
+          <rect x="492" y="256" width="76" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="530" y="265" fill="#5AA9FF">3 POST /RUNS</text>
+          <rect x="748" y="320" width="84" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="790" y="329" fill="#9BA1AB">4 AGENT START</text>
+          <rect x="492" y="396" width="76" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="530" y="405" fill="#5AA9FF">5 GET STATUS</text>
+          <rect x="740" y="428" width="100" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="790" y="437" fill="#9BA1AB">6 STATE · PROMPT</text>
+          <rect x="500" y="460" width="60" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="530" y="469" fill="#9BA1AB">7 FACTS</text>
+          <rect x="230" y="588" width="80" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="270" y="597" fill="#5AA9FF">8 KEYS · WS</text>
+          <rect x="488" y="620" width="84" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="530" y="629" fill="#5AA9FF">9 POST /INPUT</text>
+          <rect x="746" y="652" width="88" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="790" y="661" fill="#9BA1AB">10 SEND-KEYS</text>
+          <rect x="986" y="704" width="108" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="1040" y="713" fill="#8B8CFF">11 PUSH · OPEN PR</text>
+          <rect x="992" y="736" width="96" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="1040" y="745" fill="#5AA9FF">12 GH PR LIST</text>
+        </g>
+
+        <!-- Run state chips on control's lifeline -->
+        <g font-family="'Geist Mono', monospace" font-size="8" text-anchor="middle">
+          <rect x="378" y="237" width="44" height="14" rx="2" fill="#0A0B0D"/>
+          <rect x="378" y="237" width="44" height="14" rx="2" fill="rgba(139,145,155,0.12)" stroke="#8B919B" stroke-width="0.8"/>
+          <text x="400" y="247" fill="#8B919B">queued</text>
+          <rect x="370" y="301" width="60" height="14" rx="2" fill="#0A0B0D"/>
+          <rect x="370" y="301" width="60" height="14" rx="2" fill="rgba(139,145,155,0.12)" stroke="#8B919B" stroke-width="0.8"/>
+          <text x="400" y="311" fill="#8B919B">preparing</text>
+          <rect x="376" y="441" width="48" height="14" rx="2" fill="#0A0B0D"/>
+          <rect x="376" y="441" width="48" height="14" rx="2" fill="rgba(90,169,255,0.12)" stroke="#5AA9FF" stroke-width="0.8"/>
+          <text x="400" y="451" fill="#5AA9FF">running</text>
+          <rect x="360" y="565" width="80" height="14" rx="2" fill="#0A0B0D"/>
+          <rect x="360" y="565" width="80" height="14" rx="2" fill="rgba(245,165,36,0.12)" stroke="#F5A524" stroke-width="0.8"/>
+          <text x="400" y="575" fill="#F5A524">waiting_input</text>
+          <rect x="370" y="781" width="60" height="14" rx="2" fill="#0A0B0D"/>
+          <rect x="370" y="781" width="60" height="14" rx="2" fill="rgba(63,207,142,0.12)" stroke="#3FCF8E" stroke-width="0.8"/>
+          <text x="400" y="791" fill="#3FCF8E">succeeded</text>
+        </g>
+        <text x="440" y="791" fill="#8B919B" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.04em">idle + PR ⇒ succeeded</text>
+
+        <!-- Actors -->
+        <rect x="52" y="72" width="176" height="56" rx="6" fill="#0A0B0D"/>
+        <rect x="52" y="72" width="176" height="56" rx="6" fill="rgba(155,161,171,0.10)" stroke="#8B919B" stroke-width="1"/>
+        <rect x="60" y="80" width="28" height="12" rx="2" fill="none" stroke="rgba(139,145,155,0.50)" stroke-width="0.8"/>
+        <text x="74" y="89" fill="#8B919B" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">USER</text>
+        <text x="140" y="104" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Owner</text>
+        <text x="140" y="119" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">tac on Mac · phone UI</text>
+
+        <rect x="312" y="72" width="176" height="56" rx="6" fill="#0A0B0D"/>
+        <rect x="312" y="72" width="176" height="56" rx="6" fill="#111317" stroke="#E8EAED" stroke-width="1"/>
+        <rect x="320" y="80" width="28" height="12" rx="2" fill="none" stroke="rgba(232,234,237,0.40)" stroke-width="0.8"/>
+        <text x="334" y="89" fill="#E8EAED" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">SVC</text>
+        <text x="400" y="104" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">control</text>
+        <text x="400" y="119" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">API · SQLite · loop</text>
+
+        <rect x="572" y="72" width="176" height="56" rx="6" fill="#0A0B0D"/>
+        <rect x="572" y="72" width="176" height="56" rx="6" fill="#111317" stroke="#E8EAED" stroke-width="1"/>
+        <rect x="580" y="80" width="28" height="12" rx="2" fill="none" stroke="rgba(232,234,237,0.40)" stroke-width="0.8"/>
+        <text x="594" y="89" fill="#E8EAED" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">SVC</text>
+        <text x="660" y="104" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">runner</text>
+        <text x="660" y="119" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">devbox · :7781</text>
+
+        <rect x="832" y="72" width="176" height="56" rx="6" fill="#0A0B0D"/>
+        <rect x="832" y="72" width="176" height="56" rx="6" fill="#111317" stroke="#E8EAED" stroke-width="1"/>
+        <rect x="840" y="80" width="32" height="12" rx="2" fill="none" stroke="rgba(232,234,237,0.40)" stroke-width="0.8"/>
+        <text x="856" y="89" fill="#E8EAED" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PANE</text>
+        <text x="920" y="104" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Agent in herdr</text>
+        <text x="920" y="119" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">claude · later tack wave run</text>
+
+        <rect x="1072" y="72" width="176" height="56" rx="6" fill="#0A0B0D"/>
+        <rect x="1072" y="72" width="176" height="56" rx="6" fill="rgba(232,234,237,0.03)" stroke="rgba(232,234,237,0.30)" stroke-width="1"/>
+        <rect x="1080" y="80" width="28" height="12" rx="2" fill="none" stroke="rgba(232,234,237,0.22)" stroke-width="0.8"/>
+        <text x="1094" y="89" fill="#8B919B" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">EXT</text>
+        <text x="1160" y="104" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">GitHub</text>
+        <text x="1160" y="119" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">origin · PRs</text>
+
+        <!-- Legend strip -->
+        <line x1="40" y1="836" x2="1240" y2="836" stroke="rgba(232,234,237,0.10)" stroke-width="0.8"/>
+        <text x="40" y="852" fill="#9BA1AB" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+        <g font-family="'Geist', sans-serif" font-size="8.5" fill="#9BA1AB">
+          <line x1="40" y1="871" x2="68" y2="871" stroke="#5AA9FF" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+          <text x="76" y="874">HTTP over the tailnet, or GitHub</text>
+          <line x1="236" y1="871" x2="264" y2="871" stroke="#9BA1AB" stroke-width="1.2" marker-end="url(#arrow)"/>
+          <text x="272" y="874">herdr CLI on the devbox</text>
+          <line x1="400" y1="871" x2="428" y2="871" stroke="#9BA1AB" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+          <text x="436" y="874">Return: facts, no decisions</text>
+          <line x1="580" y1="871" x2="608" y2="871" stroke="#8B8CFF" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+          <text x="616" y="874">The result: a PR</text>
+          <rect x="720" y="866" width="14" height="10" rx="2" fill="rgba(139,145,155,0.12)" stroke="#8B919B" stroke-width="0.8"/>
+          <text x="740" y="874">queued / preparing</text>
+          <rect x="840" y="866" width="14" height="10" rx="2" fill="rgba(90,169,255,0.12)" stroke="#5AA9FF" stroke-width="0.8"/>
+          <text x="860" y="874">running</text>
+          <rect x="920" y="866" width="14" height="10" rx="2" fill="rgba(245,165,36,0.12)" stroke="#F5A524" stroke-width="0.8"/>
+          <text x="940" y="874">waiting_input (needs you)</text>
+          <rect x="1076" y="866" width="14" height="10" rx="2" fill="rgba(63,207,142,0.12)" stroke="#3FCF8E" stroke-width="0.8"/>
+          <text x="1096" y="874">succeeded</text>
+        </g>
+      </svg>
+    </div>
+
+    <ol class="notes">
+      <li><code>tac dispatch &lt;project&gt; &lt;plan&gt; [--host auto] [--agent claude|codex]</code>; host from projects.yaml.</li>
+      <li>The runner runs <code>git fetch</code> and checks the plan is on <code>origin/&lt;base&gt;</code>; otherwise <code>422 plan_not_found</code> and no run is created. Then the run is <code>queued</code> until its host is ok and has a free slot (<code>maxRuns</code>, default 2).</li>
+      <li>Run moves to <code>preparing</code>. The runner adds worktree <code>~/worktrees/&lt;project&gt;/&lt;run&gt;</code> on <code>run/&lt;run&gt;-&lt;slug&gt;</code> (later a tack branch <code>spec/NNN-slug-wN</code>), opens a herdr tab and saves a state file, then answers 201.</li>
+      <li><code>herdr agent start</code> runs in the background (up to 60 s); it never sends the prompt. Later the pane runs <code>tack wave run &lt;spec&gt; --wave N --run-id &lt;id&gt;</code> instead.</li>
+      <li>Each poll reports facts; <code>decide()</code> in control maps them to a state.</li>
+      <li>On the first idle poll the runner types the prompt, then checks the pane: still in the input box gets <code>enter</code>, absent is re-sent, in the transcript counts as delivered (at most 3 attempts, 4 s apart). Progress: plan checkboxes today, <code>tack wave status --json</code> (<code>tack.status/v1</code>) later.</li>
+      <li><code>agentStatus</code>, <code>promptSent</code>, <code>progress</code>, <code>prUrl</code>, <code>headSha</code>.</li>
+      <li>The first run in an untrusted folder shows Claude Code's trust dialog; permission prompts do the same. The owner answers from the phone's key bar (<code>down</code>, <code>enter</code>) over the terminal WebSocket.</li>
+      <li>control records every input in <code>run_events</code> with time and login, then forwards it.</li>
+      <li><code>herdr agent send-keys</code>; a text prompt while blocked returns <code>agent_blocked</code>.</li>
+      <li>The agent pushes the run branch and opens a PR (under tack, the driver does this after the gate).</li>
+      <li>Inside a later status poll: <code>gh pr list --head &lt;branch&gt; --state all</code>. Idle plus a PR is <code>succeeded</code>; idle without a PR for 15 minutes is <code>needs_attention</code>.</li>
+    </ol>
+  </div>
+</body>
+</html>

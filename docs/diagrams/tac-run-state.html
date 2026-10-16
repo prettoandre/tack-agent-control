@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tack-agent-control · Run states</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #0A0B0D;
+      --color-paper-2: #111317;
+      --color-ink:     #E8EAED;
+      --color-muted:   #9BA1AB;
+      --color-soft:    #8B919B;
+      --color-rule:    rgba(232,234,237,0.10);
+      --color-accent:  #8B8CFF;
+      --color-link:    #5AA9FF;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body { font-family: var(--font-sans); background: var(--color-paper); color: var(--color-ink); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 3rem 2rem; }
+    .frame { max-width: 1360px; width: 100%; min-width: 0; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    .eyebrow { font-family: var(--font-mono); font-size: 0.66rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 0.5rem; }
+    h1 { font-family: var(--font-serif); font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem); font-weight: 400; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 0.5rem; }
+    .subtitle { color: var(--color-muted); font-size: 0.9rem; line-height: 1.5; max-width: 72ch; margin-bottom: 1.5rem; }
+    .notes { margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px solid var(--color-rule); font-family: var(--font-mono); font-size: 0.7rem; line-height: 1.7; color: var(--color-muted); max-width: 110ch; }
+    .notes code { color: var(--color-ink); }
+    svg { width: 100%; min-width: 1280px; display: block; }
+    @media print {
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">State machine · Lifecycle phase map</p>
+    <h1>The life of a run</h1>
+    <p class="subtitle">control's <code>decide()</code> maps the runner's facts to a state on every 5-second poll. The labels are the guards it applies.</p>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="tac-run-state-title tac-run-state-desc">
+        <title id="tac-run-state-title">The life of a run</title>
+        <desc id="tac-run-state-desc">Run state machine: queued, preparing, running, finishing and succeeded on the primary rail; waiting_input and needs_attention as states that need the owner; failed and cancelled as terminal outcomes; and unknown as an overlay on any active state while the host is unreachable.</desc>
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#9BA1AB"/></marker>
+          <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#8B8CFF"/></marker>
+          <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#5AA9FF"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#0A0B0D"/>
+
+        <!-- Bands -->
+        <rect x="40" y="64" width="1200" height="128" rx="8" fill="rgba(232,234,237,0.03)" stroke="rgba(232,234,237,0.14)" stroke-width="0.8"/>
+        <rect x="40" y="392" width="1200" height="128" rx="8" fill="rgba(232,234,237,0.03)" stroke="rgba(232,234,237,0.14)" stroke-width="0.8"/>
+        <g fill="#8B919B" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">
+          <text x="56" y="84">WAIT · NEEDS YOU</text>
+          <text x="56" y="236">PRIMARY PHASES</text>
+          <text x="56" y="412">TERMINAL OUTCOMES</text>
+        </g>
+
+        <!-- Transitions (behind states) -->
+        <line x1="160" y1="218" x2="160" y2="248" stroke="#9BA1AB" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="240" y1="284" x2="320" y2="284" stroke="#9BA1AB" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="480" y1="284" x2="560" y2="284" stroke="#9BA1AB" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="608" y1="248" x2="608" y2="168" stroke="#9BA1AB" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="672" y1="168" x2="672" y2="248" stroke="#9BA1AB" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="720" y1="284" x2="800" y2="284" stroke="#9BA1AB" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="880" y1="248" x2="880" y2="168" stroke="#9BA1AB" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="960" y1="284" x2="1040" y2="284" stroke="#8B8CFF" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+        <line x1="640" y1="320" x2="640" y2="424" stroke="#9BA1AB" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="160" y1="320" x2="160" y2="424" stroke="#9BA1AB" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+
+        <!-- Transition labels -->
+        <g font-family="'Geist Mono', monospace" font-size="8" text-anchor="middle" letter-spacing="0.06em" fill="#9BA1AB">
+          <rect x="168" y="222" width="76" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="206" y="231">TAC DISPATCH</text>
+          <rect x="250" y="264" width="60" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="280" y="273">SLOT FREE</text>
+          <rect x="496" y="264" width="48" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="520" y="273">WORKING</text>
+          <rect x="552" y="202" width="48" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="576" y="211">BLOCKED</text>
+          <rect x="680" y="202" width="56" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="708" y="211">ANSWERED</text>
+          <rect x="725" y="264" width="70" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="760" y="273">IDLE, NO PR</text>
+          <rect x="888" y="202" width="84" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="930" y="211">≥ 15 MIN, NO PR</text>
+          <rect x="970" y="264" width="60" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="1000" y="273" fill="#8B8CFF">IDLE + PR</text>
+          <rect x="648" y="360" width="76" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="686" y="369">PROCESS DIED</text>
+          <rect x="168" y="360" width="72" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="204" y="369">TAC CANCEL *</text>
+        </g>
+
+        <!-- Start pseudo-state -->
+        <circle cx="160" cy="212" r="6" fill="#E8EAED"/>
+
+        <!-- Primary rail -->
+        <g text-anchor="middle">
+          <rect x="80" y="248" width="160" height="72" rx="8" fill="#0A0B0D"/>
+          <rect x="80" y="248" width="160" height="72" rx="8" fill="rgba(139,145,155,0.10)" stroke="#8B919B" stroke-width="1"/>
+          <text x="160" y="278" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif">queued</text>
+          <text x="160" y="294" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace">waits for a slot</text>
+          <text x="160" y="306" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace">maxRuns per host, def. 2</text>
+
+          <rect x="320" y="248" width="160" height="72" rx="8" fill="#0A0B0D"/>
+          <rect x="320" y="248" width="160" height="72" rx="8" fill="rgba(139,145,155,0.10)" stroke="#8B919B" stroke-width="1"/>
+          <text x="400" y="278" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif">preparing</text>
+          <text x="400" y="294" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace">fetch · worktree · tab</text>
+          <text x="400" y="306" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace">agent start, background</text>
+
+          <rect x="560" y="248" width="160" height="72" rx="8" fill="#0A0B0D"/>
+          <rect x="560" y="248" width="160" height="72" rx="8" fill="rgba(90,169,255,0.10)" stroke="#5AA9FF" stroke-width="1"/>
+          <text x="640" y="278" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif">running</text>
+          <text x="640" y="294" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace">herdr: working</text>
+          <text x="640" y="306" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace">progress from the plan</text>
+
+          <rect x="800" y="248" width="160" height="72" rx="8" fill="#0A0B0D"/>
+          <rect x="800" y="248" width="160" height="72" rx="8" fill="rgba(90,169,255,0.05)" stroke="#5AA9FF" stroke-width="1"/>
+          <text x="880" y="278" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif">finishing</text>
+          <text x="880" y="294" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace">idle, prompt delivered</text>
+          <text x="880" y="306" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace">idle timer running</text>
+
+          <rect x="1040" y="248" width="160" height="72" rx="8" fill="#0A0B0D"/>
+          <rect x="1040" y="248" width="160" height="72" rx="8" fill="rgba(63,207,142,0.10)" stroke="#3FCF8E" stroke-width="1.2"/>
+          <circle cx="1060" cy="268" r="7" fill="none" stroke="#3FCF8E"/>
+          <circle cx="1060" cy="268" r="4" fill="#3FCF8E"/>
+          <text x="1120" y="278" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif">succeeded</text>
+          <text x="1120" y="294" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace">PR link stored</text>
+          <text x="1120" y="306" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace">session lives to cleanup</text>
+        </g>
+
+        <!-- Wait band -->
+        <g text-anchor="middle">
+          <rect x="560" y="96" width="160" height="72" rx="8" fill="#0A0B0D"/>
+          <rect x="560" y="96" width="160" height="72" rx="8" fill="rgba(245,165,36,0.10)" stroke="#F5A524" stroke-width="1"/>
+          <text x="640" y="126" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif">waiting_input</text>
+          <text x="640" y="142" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace">herdr: blocked</text>
+          <text x="640" y="154" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace">trust dialog, permission</text>
+
+          <rect x="800" y="96" width="160" height="72" rx="8" fill="#0A0B0D"/>
+          <rect x="800" y="96" width="160" height="72" rx="8" fill="rgba(245,165,36,0.10)" stroke="#F5A524" stroke-width="1"/>
+          <text x="880" y="126" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif">needs_attention</text>
+          <text x="880" y="142" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace">owner notified</text>
+          <text x="880" y="154" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace">retry or cancel</text>
+        </g>
+
+        <!-- Terminal band -->
+        <g text-anchor="middle">
+          <rect x="80" y="424" width="240" height="72" rx="8" fill="#0A0B0D"/>
+          <rect x="80" y="424" width="240" height="72" rx="8" fill="rgba(139,145,155,0.06)" stroke="#8B919B" stroke-width="1"/>
+          <text x="200" y="454" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif">cancelled</text>
+          <text x="200" y="470" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace">* from any non-terminal state</text>
+          <text x="200" y="482" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace">by the owner; runner stops agent</text>
+
+          <rect x="520" y="424" width="240" height="72" rx="8" fill="#0A0B0D"/>
+          <rect x="520" y="424" width="240" height="72" rx="8" fill="rgba(255,107,107,0.10)" stroke="#FF6B6B" stroke-width="1.5" stroke-dasharray="3,3"/>
+          <text x="640" y="454" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif">failed</text>
+          <text x="640" y="470" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace">agent gone without a PR, start refused,</text>
+          <text x="640" y="482" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace">or runner unaware of the run after 60 s</text>
+        </g>
+
+        <!-- Unknown: overlay on any active state (no box: it can replace any active state) -->
+        <rect x="80" y="553" width="56" height="14" rx="2" fill="rgba(139,145,155,0.12)" stroke="#8B919B" stroke-width="0.8" stroke-dasharray="3,2"/>
+        <text x="108" y="563" fill="#8B919B" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">unknown</text>
+        <g font-family="'Instrument Serif', serif" font-size="14" font-style="italic" fill="#9BA1AB">
+          <text x="148" y="565">overlays any active state: after 3 failed health checks (every 15 s) the host is unreachable and its runs become unknown, never failed.</text>
+          <text x="80" y="589">When the runner is back it rebuilds state from herdr and its state files, and reconciliation returns each run to the state its facts show.</text>
+        </g>
+
+        <!-- Legend strip -->
+        <line x1="40" y1="660" x2="1240" y2="660" stroke="rgba(232,234,237,0.10)" stroke-width="0.8"/>
+        <text x="40" y="676" fill="#9BA1AB" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+        <g font-family="'Geist', sans-serif" font-size="8.5" fill="#9BA1AB">
+          <rect x="40" y="690" width="14" height="10" rx="2" fill="rgba(139,145,155,0.10)" stroke="#8B919B" stroke-width="1"/>
+          <text x="60" y="698">Not started / cancelled / unknown</text>
+          <rect x="224" y="690" width="14" height="10" rx="2" fill="rgba(90,169,255,0.10)" stroke="#5AA9FF" stroke-width="1"/>
+          <text x="244" y="698">Agent active</text>
+          <rect x="336" y="690" width="14" height="10" rx="2" fill="rgba(245,165,36,0.10)" stroke="#F5A524" stroke-width="1"/>
+          <text x="356" y="698">Needs you</text>
+          <rect x="432" y="690" width="14" height="10" rx="2" fill="rgba(63,207,142,0.10)" stroke="#3FCF8E" stroke-width="1"/>
+          <text x="452" y="698">Succeeded</text>
+          <rect x="528" y="690" width="14" height="10" rx="2" fill="rgba(255,107,107,0.10)" stroke="#FF6B6B" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <text x="548" y="698">Failed</text>
+          <line x1="612" y1="695" x2="640" y2="695" stroke="#8B8CFF" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+          <text x="648" y="698">The only success guard: idle + PR</text>
+          <line x1="832" y1="695" x2="860" y2="695" stroke="#9BA1AB" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+          <text x="868" y="698">* drawn once, applies to every non-terminal state</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="notes">
+      <p>Facts, not reports: herdr agent state, plan checkboxes, branch head, an existing PR. <code>idle + PR</code> also ends <code>running</code> or <code>needs_attention</code> directly; <code>finishing</code> and <code>needs_attention</code> return to <code>running</code> when the agent works again. A text prompt sent while blocked returns <code>agent_blocked</code>; answer with keys.</p>
+      <p>The idle timer starts only once the initial prompt is acknowledged (or its 3 attempts are spent), so a slow first prompt is not read as "finished". Timeout: <code>TAC_IDLE_TIMEOUT_MS</code>, default 15 minutes.</p>
+      <p><code>needs_attention</code> still holds a host slot; <code>retry</code> frees the old worktree (the branch and its commits are kept), cancels the old run and queues a new run on the same branch. herdr restarting loses the pane, so the run fails; <code>retry</code> continues from its commits.</p>
+    </div>
+  </div>
+</body>
+</html>
