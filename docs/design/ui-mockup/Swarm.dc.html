@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Swarm — 150 agents live</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0B0D}
+a{color:#A9AAFF;text-decoration:none}a:hover{color:#C9CAFF}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #0A0B0D; color: #E8EAED; font-family: Geist, system-ui, sans-serif; font-size: 13px; display: flex; flex-direction: column">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 28px; border-bottom: 1px solid #1C1F25; background: #0B0C0F">
+<div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+<a href="Main.dc.html" style="font-size: 12px; color: #9BA1AB">Fleet</a>
+<span aria-hidden="true" style="color: #3A3F48">/</span>
+<h1 style="margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.015em">Swarm</h1>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 99px; background: {{liveBg}}; color: {{liveFg}}; font-size: 12px"><span aria-hidden="true" style="width: 6px; height: 6px; border-radius: 50%; background: {{liveFg}}"></span>{{liveLabel}}</span>
+<span style="color: #8B919B; font-size: 12px; font-variant-numeric: tabular-nums">{{total}} agents · 3 hosts · {{runCount}} runs · tick {{tick}}</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<div role="group" aria-label="Simulation speed" style="display: flex; gap: 4px; background: #0D0F12; border: 1px solid #1F2329; border-radius: 8px; padding: 3px">
+<button type="button" onClick="{{speed1}}" style="height: 28px; padding: 0 12px; border-radius: 6px; border: 0; background: {{s1Bg}}; color: {{s1Fg}}; font: inherit; font-size: 12px">1×</button>
+<button type="button" onClick="{{speed4}}" style="height: 28px; padding: 0 12px; border-radius: 6px; border: 0; background: {{s4Bg}}; color: {{s4Fg}}; font: inherit; font-size: 12px">4×</button>
+</div>
+<button type="button" onClick="{{toggle}}" style="height: 34px; padding: 0 14px; border-radius: 8px; border: 0; background: #8B8CFF; color: #0A0B0D; font: inherit; font-weight: 600">{{toggleLabel}}</button>
+</div>
+</header>
+
+<div style="padding: 20px 28px 40px; display: flex; flex-direction: column; gap: 20px; max-width: 1440px; width: 100%; box-sizing: border-box">
+
+<section aria-label="Agent states" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px">
+<sc-for list="{{counts}}" as="c" hint-placeholder-count="6">
+<div style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px">
+<span style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #9BA1AB"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; background: {{c.color}}"></span>{{c.label}}</span>
+<span style="font-size: 26px; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums">{{c.n}}</span>
+<span aria-hidden="true" style="height: 4px; border-radius: 2px; background: #1E2228; display: block; overflow: hidden"><span style="display: block; height: 100%; width: {{c.pct}}%; background: {{c.color}}"></span></span>
+</div>
+</sc-for>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<div style="flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<sc-for list="{{hosts}}" as="h" hint-placeholder-count="3">
+<section style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px">
+<h2 style="margin: 0; font-size: 14px; font-weight: 600">{{h.name}} <span style="font-weight: 400; color: #8B919B; font-size: 12px">· {{h.kind}}</span></h2>
+<span style="font-size: 12px; color: #9BA1AB; font-variant-numeric: tabular-nums">{{h.summary}}</span>
+</div>
+<div role="img" aria-label="{{h.aria}}" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(22px, 1fr)); gap: 4px">
+<sc-for list="{{h.tiles}}" as="t" hint-placeholder-count="50">
+<span title="{{t.tip}}" style="aspect-ratio: 1; border-radius: 5px; background: {{t.bg}}; border: 1px solid {{t.border}}"></span>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 11.5px; color: #8B919B">
+<span>CPU {{h.cpu}}%</span><span>RAM {{h.ram}} GB</span><span>{{h.tpm}} tokens/min</span><span>{{h.engines}}</span>
+</div>
+</section>
+</sc-for>
+</div>
+
+<aside style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+<section aria-labelledby="tp-h" style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<h2 id="tp-h" style="margin: 0; font-size: 14px; font-weight: 600">Tasks completed</h2>
+<span style="font-size: 12px; color: #9BA1AB; font-variant-numeric: tabular-nums">{{doneTotal}} total · {{rate}}/tick</span>
+</div>
+<div aria-hidden="true" style="display: flex; align-items: flex-end; gap: 3px; height: 72px">
+<sc-for list="{{hist}}" as="b" hint-placeholder-count="30">
+<span style="flex: 1; height: {{b.h}}px; border-radius: 2px; background: #3FCF8E; opacity: {{b.o}}"></span>
+</sc-for>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 11.5px; color: #8B919B">Tokens / min</span><span style="font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums">{{tpm}}</span></div>
+<div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 11.5px; color: #8B919B">Spend / hour</span><span style="font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums">{{usdh}}</span></div>
+</div>
+</section>
+
+<section aria-labelledby="runs-h" style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<h2 id="runs-h" style="margin: 0; font-size: 14px; font-weight: 600">Agents by run</h2>
+<sc-for list="{{runs}}" as="r" hint-placeholder-count="10">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 90px 28px; gap: 10px; align-items: center; font-size: 12px">
+<span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap"><span aria-hidden="true" style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: {{r.color}}; margin-right: 6px"></span>{{r.label}}</span>
+<span aria-hidden="true" style="height: 6px; border-radius: 3px; background: #1E2228; display: block; overflow: hidden"><span style="display: block; height: 100%; width: {{r.pct}}%; background: {{r.color}}"></span></span>
+<span style="text-align: right; font-variant-numeric: tabular-nums; color: #C5C9D0">{{r.n}}</span>
+</div>
+</sc-for>
+</section>
+
+<section aria-labelledby="ev-h" style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<h2 id="ev-h" style="margin: 0; font-size: 14px; font-weight: 600">Live events</h2>
+<ol aria-live="polite" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{events}}" as="e" hint-placeholder-count="10">
+<li style="display: grid; grid-template-columns: 10px 1fr; gap: 8px; align-items: start; padding: 4px 0; font-size: 12px">
+<span aria-hidden="true" style="width: 8px; height: 8px; margin-top: 4px; border-radius: 50%; background: {{e.color}}"></span>
+<span style="color: #C5C9D0; line-height: 1.45"><span style="font-family: 'Geist Mono', monospace; color: #9BA1AB">{{e.agent}}</span> {{e.text}}</span>
+</li>
+</sc-for>
+</ol>
+</section>
+</aside>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"agents":{"editor":"range","default":150,"min":30,"max":300,"step":10},"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = this.seed(props.agents ?? 150);
+  }
+  rng() {
+    this._s = (this._s * 1664525 + 1013904223) % 4294967296;
+    return this._s / 4294967296;
+  }
+  seed(n) {
+    this._s = 42;
+    const runs = this.runDefs();
+    const states = ['working', 'working', 'working', 'review', 'waiting', 'idle', 'working', 'review', 'idle', 'blocked'];
+    const agents = [];
+    for (let i = 0; i < n; i++) {
+      const host = i < Math.round(n * 0.4) ? 0 : i < Math.round(n * 0.87) ? 1 : 2;
+      const pool = runs.filter((r) => r.host === host);
+      const run = pool[Math.floor(this.rng() * pool.length)];
+      const st = i < 3 ? 'waiting' : states[Math.floor(this.rng() * states.length)];
+      agents.push({ id: 'a' + String(i + 1).padStart(3, '0'), host, run: run.id, task: run.spec + '.' + (1 + Math.floor(this.rng() * 9)), engine: this.rng() < 0.55 ? 'codex' : 'claude', state: st === 'blocked' && this.rng() < 0.6 ? 'working' : st });
+    }
+    return { agents, tick: 0, running: true, speed: 1, doneTotal: 0, hist: Array.from({ length: 30 }, () => 0), events: [] };
+  }
+  runDefs() {
+    return [
+      { id: 'siga 030 w2', spec: 'T30', host: 1, color: '#5AA9FF' },
+      { id: 'siga 041 w1', spec: 'T41', host: 1, color: '#5AA9FF' },
+      { id: 'siga 042 w1', spec: 'T42', host: 1, color: '#5AA9FF' },
+      { id: 'scaii 012 w1', spec: 'T12', host: 1, color: '#F5A524' },
+      { id: 'scaii 014 w3', spec: 'T14', host: 1, color: '#F5A524' },
+      { id: 'tack 001 1a', spec: 'T1', host: 0, color: '#8B8CFF' },
+      { id: 'tack 002 w1', spec: 'T2', host: 0, color: '#8B8CFF' },
+      { id: 'tac 003 w2', spec: 'T3', host: 0, color: '#B48CFF' },
+      { id: 'leiloes 006 w1', spec: 'T6', host: 0, color: '#3FCF8E' },
+      { id: 'gb10 eval sweep', spec: 'E1', host: 2, color: '#FF7A90' },
+      { id: 'gb10 transcribe', spec: 'E2', host: 2, color: '#FF7A90' }
+    ];
+  }
+  componentDidMount() { this.schedule(); }
+  componentWillUnmount() { clearTimeout(this._t); }
+  schedule() {
+    clearTimeout(this._t);
+    this._t = setTimeout(() => { if (this.state.running) this.step(); this.schedule(); }, this.state.speed === 4 ? 250 : 900);
+  }
+  step() {
+    const agents = this.state.agents.map((a) => Object.assign({}, a));
+    const events = this.state.events.slice();
+    let done = 0;
+    const moves = Math.max(4, Math.round(agents.length / 15));
+    for (let k = 0; k < moves; k++) {
+      const a = agents[Math.floor(Math.random() * agents.length)];
+      const r = Math.random();
+      let to = a.state;
+      if (a.state === 'idle') to = 'working';
+      else if (a.state === 'working') to = r < 0.6 ? 'review' : r < 0.9 ? 'working' : r < 0.97 ? 'waiting' : 'blocked';
+      else if (a.state === 'review') to = r < 0.72 ? 'done' : 'working';
+      else if (a.state === 'done') to = 'idle';
+      else if (a.state === 'waiting') to = r < 0.5 ? 'working' : 'waiting';
+      else if (a.state === 'blocked') to = r < 0.3 ? 'idle' : 'blocked';
+      if (to === a.state) continue;
+      if (to === 'done') done++;
+      const text = { working: 'started ' + a.task + ' · ' + a.engine, review: 'sent ' + a.task + ' to review', done: 'finished ' + a.task + ' · PASS', waiting: 'asks for permission on ' + a.task, blocked: 'blocked on ' + a.task + ' after round 2', idle: 'released its slot' }[to];
+      events.unshift({ agent: a.id, text, state: to });
+      a.state = to;
+    }
+    agents.forEach((a) => { if (a.state === 'done' && Math.random() < 0.5) a.state = 'idle'; });
+    const hist = this.state.hist.slice(1).concat([done]);
+    this.setState({ agents, events: events.slice(0, 10), tick: this.state.tick + 1, doneTotal: this.state.doneTotal + done, hist });
+  }
+  renderVals() {
+    const want = this.props.agents ?? 150;
+    if (want !== this.state.agents.length) { const s = this.seed(want); setTimeout(() => this.setState(s), 0); }
+    const C = { working: '#5AA9FF', review: '#B48CFF', waiting: '#F5A524', blocked: '#FF6B6B', idle: '#2A2E36', done: '#3FCF8E' };
+    const L = { working: 'Working', review: 'In review', waiting: 'Needs you', blocked: 'Blocked', idle: 'Idle slot', done: 'Just finished' };
+    const agents = this.state.agents;
+    const total = agents.length;
+    const by = {};
+    agents.forEach((a) => { by[a.state] = (by[a.state] || 0) + 1; });
+    const order = ['working', 'review', 'waiting', 'blocked', 'done', 'idle'];
+    const counts = order.map((k) => ({ label: L[k], n: by[k] || 0, pct: Math.round(((by[k] || 0) / total) * 100), color: k === 'idle' ? '#4A505A' : C[k] }));
+    const hostDefs = [
+      { name: 'devbox-homelab', kind: 'proxmox · 16 vCPU · 64 GB' },
+      { name: 'devbox-htz', kind: 'hetzner · 32 vCPU · 128 GB' },
+      { name: 'gb10-local', kind: 'NVIDIA GB10 · local models' }
+    ];
+    const active = (s) => s !== 'idle';
+    const hosts = hostDefs.map((h, hi) => {
+      const mine = agents.filter((a) => a.host === hi);
+      const busy = mine.filter((a) => active(a.state)).length;
+      const wait = mine.filter((a) => a.state === 'waiting').length;
+      const codex = mine.filter((a) => a.engine === 'codex').length;
+      return {
+        name: h.name, kind: h.kind,
+        summary: busy + ' busy · ' + wait + ' need you · ' + mine.length + ' agents',
+        aria: h.name + ': ' + busy + ' of ' + mine.length + ' agents busy, ' + wait + ' waiting for the owner',
+        tiles: mine.map((a) => ({ tip: a.id + ' · ' + a.run + ' · ' + a.task + ' · ' + a.engine + ' · ' + L[a.state], bg: a.state === 'idle' ? '#15181D' : C[a.state] + '55', border: a.state === 'idle' ? '#22262D' : C[a.state] })),
+        cpu: Math.min(97, Math.round(18 + (busy / Math.max(1, mine.length)) * 70)),
+        ram: Math.round(6 + busy * 0.45),
+        tpm: (busy * 1.9).toFixed(0) + 'k',
+        engines: 'codex ' + codex + ' · claude ' + (mine.length - codex)
+      };
+    });
+    const runDefs = this.runDefs();
+    const max = Math.max(1, ...runDefs.map((r) => agents.filter((a) => a.run === r.id && active(a.state)).length));
+    const runs = runDefs.map((r) => { const n = agents.filter((a) => a.run === r.id && active(a.state)).length; return { label: r.id, n, pct: Math.round((n / max) * 100), color: r.color }; }).sort((a, b) => b.n - a.n);
+    const hmax = Math.max(1, ...this.state.hist);
+    const hist = this.state.hist.map((v, i) => ({ h: Math.max(2, Math.round((v / hmax) * 70)), o: 0.35 + (i / 30) * 0.65 }));
+    const busyAll = total - (by.idle || 0);
+    const running = this.state.running;
+    const fast = this.state.speed === 4;
+    return {
+      total, runCount: runDefs.length, tick: this.state.tick, counts, hosts, runs, hist,
+      doneTotal: this.state.doneTotal,
+      rate: (this.state.hist.slice(-10).reduce((s, v) => s + v, 0) / 10).toFixed(1),
+      tpm: (busyAll * 1.9).toFixed(0) + 'k',
+      usdh: '$' + (busyAll * 0.31).toFixed(2),
+      events: this.state.events.map((e) => ({ agent: e.agent, text: e.text, color: C[e.state] === '#2A2E36' ? '#4A505A' : C[e.state] })),
+      liveLabel: running ? 'Simulating' : 'Paused', liveBg: running ? '#3FCF8E1F' : '#F5A5241F', liveFg: running ? '#6FE0AE' : '#F5C46B',
+      toggleLabel: running ? 'Pause' : 'Resume',
+      toggle: () => this.setState({ running: !running }),
+      speed1: () => { this.setState({ speed: 1 }); },
+      speed4: () => { this.setState({ speed: 4 }); },
+      s1Bg: fast ? 'transparent' : '#1E2128', s1Fg: fast ? '#9BA1AB' : '#E8EAED',
+      s4Bg: fast ? '#1E2128' : 'transparent', s4Fg: fast ? '#E8EAED' : '#9BA1AB'
+    };
+  }
+}
+</script>
+</body>
+</html>

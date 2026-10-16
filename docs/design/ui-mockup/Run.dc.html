@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Run r63agm9er — wave graph</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0B0D}
+a{color:#A9AAFF;text-decoration:none}a:hover{color:#C9CAFF}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #0A0B0D; color: #E8EAED; font-family: Geist, system-ui, sans-serif; font-size: 13px; display: flex; flex-direction: column">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 28px; border-bottom: 1px solid #1C1F25; background: #0B0C0F">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<nav aria-label="Breadcrumb" style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #8B919B">
+<a href="Main.dc.html" style="color: #9BA1AB">Fleet</a><span aria-hidden="true">/</span>
+<a href="#" style="color: #9BA1AB">sigamobilidade</a><span aria-hidden="true">/</span>
+<span style="color: #C5C9D0">030 · nats-telemetria</span>
+</nav>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+<h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.02em">Wave 2 · telemetry spool and subjects</h1>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 99px; background: #5AA9FF22; color: #8FC4FF; font-size: 12px"><span aria-hidden="true" style="width: 6px; height: 6px; border-radius: 50%; background: #5AA9FF"></span>Running · 7 of 9 tasks</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: #9BA1AB">
+<span style="font-family: 'Geist Mono', monospace; color: #C9CAFF">r63agm9er</span>
+<span>spec/030-nats-telemetria-w2</span>
+<span>devbox-htz · .worktrees/030-w2</span>
+<span>started 03:01 · 38 min</span>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #2A2E36; background: #121418; color: #C5C9D0; font: inherit">Pause</button>
+<button type="button" style="height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #4A2A2C; background: #1A1012; color: #FF9A9A; font: inherit">Cancel run</button>
+<button type="button" style="height: 34px; padding: 0 14px; border-radius: 8px; border: 0; background: {{accent}}; color: #0A0B0D; font: inherit; font-weight: 600">Attach terminal</button>
+</div>
+</header>
+
+<div style="padding: 20px 28px 40px; display: flex; flex-direction: column; gap: 20px; max-width: 1440px; width: 100%; box-sizing: border-box">
+
+<section aria-label="Run figures" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px">
+<sc-for list="{{stats}}" as="s" hint-placeholder-count="6">
+<div style="background: #111317; border: 1px solid #1F2329; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 11.5px; color: #9BA1AB">{{s.label}}</span>
+<span style="font-size: 20px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums">{{s.value}}</span>
+<span style="font-size: 11.5px; color: #8B919B">{{s.sub}}</span>
+</div>
+</sc-for>
+</section>
+
+<section aria-labelledby="dag-h" style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; display: flex; flex-direction: column">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px; border-bottom: 1px solid #1F2329">
+<h2 id="dag-h" style="margin: 0; font-size: 14px; font-weight: 600">Wave graph</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 12px; font-size: 11.5px; color: #9BA1AB">
+<sc-for list="{{legend}}" as="l" hint-placeholder-count="5">
+<span style="display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 2px; background: {{l.color}}"></span>{{l.label}}</span>
+</sc-for>
+</div>
+</div>
+<div style="overflow-x: auto; padding: 18px 16px">
+<div style="display: flex; align-items: stretch; gap: 0; min-width: 980px">
+<sc-for list="{{levels}}" as="lv" hint-placeholder-count="4">
+<div style="display: flex; align-items: stretch">
+<div style="display: flex; flex-direction: column; gap: 10px; width: 228px">
+<span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #8B919B">{{lv.title}}</span>
+<sc-for list="{{lv.tasks}}" as="t" hint-placeholder-count="3">
+<div style="border: 1px solid {{t.border}}; background: {{t.bg}}; border-radius: 10px; padding: 11px 12px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 6px">
+<span style="font-family: 'Geist Mono', monospace; font-size: 11.5px; color: {{t.color}}">{{t.id}}</span>
+<span style="font-size: 10.5px; color: {{t.color}}; display: inline-flex; align-items: center; gap: 5px"><span aria-hidden="true" style="width: 6px; height: 6px; border-radius: 50%; background: {{t.color}}"></span>{{t.state}}</span>
+</div>
+<span style="font-size: 12.5px; line-height: 1.35; color: #E8EAED">{{t.title}}</span>
+<div style="display: flex; flex-wrap: wrap; gap: 4px">
+<span style="font-family: 'Geist Mono', monospace; font-size: 10px; padding: 2px 6px; border-radius: 5px; background: {{t.engBg}}; color: {{t.engFg}}">{{t.engine}}</span>
+<span style="font-size: 10px; padding: 2px 6px; border-radius: 5px; background: #1A1D23; color: #9BA1AB">{{t.meta}}</span>
+</div>
+</div>
+</sc-for>
+</div>
+<sc-if value="{{lv.arrow}}" hint-placeholder-val="{{ true }}">
+<div aria-hidden="true" style="width: 44px; display: flex; align-items: center; justify-content: center; padding-top: 22px">
+<div style="display: flex; align-items: center; width: 100%">
+<span style="flex: 1; height: 1px; background: #3A3F48"></span>
+<svg width="8" height="10" viewBox="0 0 8 10"><path d="M0 0l8 5-8 5z" fill="#3A3F48"></path></svg>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; padding: 0 16px 14px; font-size: 11.5px; color: #9BA1AB">
+<span style="border: 1px dashed #4A3A1A; color: #F5C46B; border-radius: 6px; padding: 3px 8px">files conflict · T30.6 and T30.7 both touch infra/compose/telemetry.yml → serialized</span>
+<span style="border: 1px solid #262A31; border-radius: 6px; padding: 3px 8px">parallelism 4 · levels 4 · critical path T30.2 → T30.5 → T30.7 → T30.9</span>
+</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<div style="flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+
+<section aria-labelledby="tl-h" style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<h2 id="tl-h" style="margin: 0; font-size: 14px; font-weight: 600">Timeline</h2>
+<span style="font-size: 11.5px; color: #8B919B">03:01 → now · implement · review · fix</span>
+</div>
+<div style="display: grid; grid-template-columns: 64px 1fr; gap: 6px 10px; align-items: center">
+<span></span>
+<div aria-hidden="true" style="display: flex; justify-content: space-between; font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #8B919B"><span>03:00</span><span>03:10</span><span>03:20</span><span>03:30</span><span>03:40</span></div>
+<sc-for list="{{gantt}}" as="g" hint-placeholder-count="9">
+<span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #9BA1AB">{{g.id}}</span>
+<div style="position: relative; height: 18px; background: #0E1013; border-radius: 4px">
+<sc-for list="{{g.bars}}" as="b" hint-placeholder-count="2">
+<span style="position: absolute; top: 3px; height: 12px; left: {{b.left}}%; width: {{b.width}}%; border-radius: 3px; background: {{b.color}}"></span>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="term-h" style="background: #07080A; border: 1px solid #1F2329; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; border-bottom: 1px solid #1A1D22; background: #0C0D10">
+<h2 id="term-h" style="margin: 0; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: #3FCF8E"></span>Live terminal · herdr pane r63agm9er</h2>
+<span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #8B919B">claude 2.1.301 · tack wave run 030 --wave 2</span>
+</div>
+<pre style="margin: 0; padding: 14px 16px; font-family: 'Geist Mono', monospace; font-size: 12px; line-height: 1.65; color: #B9BEC6; white-space: pre-wrap; overflow-wrap: anywhere; min-height: 220px">
+<sc-for list="{{term}}" as="ln" hint-placeholder-count="10"><span style="display: block; color: {{ln.color}}">{{ln.text}}</span></sc-for></pre>
+<div style="border-top: 1px solid #1A1D22; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; background: #0C0D10">
+<label for="send" style="font-size: 11.5px; color: #8B919B">Message to the session (recorded with your login)</label>
+<div style="display: flex; gap: 8px">
+<input id="send" type="text" placeholder="Type a message for the agent…" style="flex: 1; min-width: 0; height: 36px; border-radius: 8px; border: 1px solid #2A2E36; background: #111317; color: #E8EAED; padding: 0 12px; font: inherit">
+<button type="button" style="height: 36px; padding: 0 14px; border-radius: 8px; border: 0; background: #8B8CFF; color: #0A0B0D; font: inherit; font-weight: 600">Send</button>
+</div>
+<div role="group" aria-label="Keys" style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{keys}}" as="k" hint-placeholder-count="7">
+<button type="button" style="min-width: 44px; height: 32px; padding: 0 10px; border-radius: 7px; border: 1px solid #2A2E36; background: #15181D; color: #C5C9D0; font-family: 'Geist Mono', monospace; font-size: 12px">{{k}}</button>
+</sc-for>
+</div>
+</div>
+</section>
+</div>
+
+<aside style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+<section aria-labelledby="task-h" style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h2 id="task-h" style="margin: 0; font-size: 14px; font-weight: 600">T30.5 · Subject router</h2>
+<span style="font-size: 11.5px; color: #C9AFFF; display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 6px; height: 6px; border-radius: 50%; background: #B48CFF"></span>In review</span>
+</div>
+<dl style="margin: 0; display: grid; grid-template-columns: 96px 1fr; gap: 8px 10px; font-size: 12px">
+<sc-for list="{{detail}}" as="d" hint-placeholder-count="8">
+<dt style="color: #8B919B">{{d.k}}</dt><dd style="margin: 0; color: #E8EAED; overflow-wrap: anywhere">{{d.v}}</dd>
+</sc-for>
+</dl>
+<div style="border-top: 1px solid #1F2329; padding-top: 12px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 12px; color: #9BA1AB">Rounds</span>
+<div style="display: flex; gap: 6px">
+<span style="flex: 1; border-radius: 6px; padding: 6px 8px; background: #FF6B6B1A; color: #FFA3A3; font-size: 11.5px">R0 · codex · FAIL 2</span>
+<span style="flex: 1; border-radius: 6px; padding: 6px 8px; background: #B48CFF1F; color: #D4BEFF; font-size: 11.5px">R1 · codex · reviewing</span>
+</div>
+</div>
+</section>
+
+<section aria-labelledby="ev-h" style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<h2 id="ev-h" style="margin: 0; font-size: 14px; font-weight: 600">Events</h2>
+<span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #8B919B">specs/030-nats-telemetria/events.jsonl</span>
+</div>
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{events}}" as="e" hint-placeholder-count="8">
+<li style="display: grid; grid-template-columns: 44px 10px 1fr; gap: 8px; align-items: start; padding: 5px 0; font-size: 12px">
+<span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #8B919B">{{e.t}}</span>
+<span aria-hidden="true" style="width: 8px; height: 8px; margin-top: 4px; border-radius: 50%; background: {{e.color}}"></span>
+<span style="color: #C5C9D0; line-height: 1.45">{{e.text}}</span>
+</li>
+</sc-for>
+</ol>
+</section>
+
+<section aria-labelledby="cost-h" style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<h2 id="cost-h" style="margin: 0; font-size: 14px; font-weight: 600">Cost by model</h2>
+<sc-for list="{{cost}}" as="c" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; gap: 5px">
+<div style="display: flex; justify-content: space-between; font-size: 12px"><span style="font-family: 'Geist Mono', monospace; color: #C5C9D0">{{c.model}}</span><span style="font-variant-numeric: tabular-nums; color: #E8EAED">{{c.usd}}</span></div>
+<span aria-hidden="true" style="height: 5px; border-radius: 3px; background: #1E2228; display: block; overflow: hidden"><span style="display: block; height: 100%; width: {{c.pct}}%; background: {{c.color}}"></span></span>
+<span style="font-size: 11px; color: #8B919B">{{c.note}}</span>
+</div>
+</sc-for>
+</section>
+</aside>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#8B8CFF","options":["#8B8CFF","#5AA9FF","#3FCF8E","#F5A524"]},"$preview":{"width":1440,"height":1240}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const S = {
+      reviewed: { c: '#3FCF8E', bg: '#3FCF8E0F', border: '#25503D', label: 'Reviewed' },
+      review: { c: '#B48CFF', bg: '#B48CFF12', border: '#4A3A6E', label: 'In review' },
+      running: { c: '#5AA9FF', bg: '#5AA9FF12', border: '#2A4A70', label: 'Running' },
+      fixing: { c: '#F5A524', bg: '#F5A52410', border: '#5A4318', label: 'Fixing' },
+      pending: { c: '#8B919B', bg: '#15181D', border: '#262A31', label: 'Pending' }
+    };
+    const t = (id, title, st, engine, meta) => {
+      const s = S[st];
+      const codex = engine.startsWith('codex');
+      return { id, title, state: s.label, color: s.c, bg: s.bg, border: s.border, engine, meta, engBg: codex ? '#3FCF8E1A' : '#8B8CFF1F', engFg: codex ? '#7FE3B5' : '#C9CAFF' };
+    };
+    const bar = (l, w, c) => ({ left: l, width: w, color: c });
+    const I = '#5AA9FF', R = '#B48CFF', F = '#F5A524', G = '#3FCF8E';
+    return {
+      accent: this.props.accent ?? '#8B8CFF',
+      stats: [
+        { label: 'Tasks', value: '7 / 9', sub: '5 reviewed · 1 in review · 1 fixing' },
+        { label: 'First-round pass', value: '71%', sub: '5 of 7 passed review in R0' },
+        { label: 'Tokens', value: '3.9M', sub: 'in 2.6M · out 0.4M · cache 0.9M' },
+        { label: 'Cost', value: '$6.42', sub: 'codex $2.10 · claude $4.32' },
+        { label: 'Gate', value: 'Pending', sub: 'scripts/gate.sh after T30.9' },
+        { label: 'PR', value: '—', sub: 'opens when the gate is green' }
+      ],
+      legend: [
+        { label: 'Reviewed', color: '#3FCF8E' }, { label: 'In review', color: '#B48CFF' }, { label: 'Running', color: '#5AA9FF' }, { label: 'Fixing', color: '#F5A524' }, { label: 'Pending', color: '#8B919B' }
+      ],
+      levels: [
+        { title: 'Level 1', arrow: true, tasks: [t('T30.1', 'Spool schema and migration', 'reviewed', 'codex/terra', 'mechanical · R0'), t('T30.2', 'Spool writer with one subject', 'reviewed', 'codex/astra', 'prose · R0'), t('T30.3', 'Device heartbeat payload', 'reviewed', 'codex/luna', 'mechanical · R0')] },
+        { title: 'Level 2', arrow: true, tasks: [t('T30.4', 'Compose service for the broker', 'reviewed', 'codex/terra', 'mechanical · R0'), t('T30.5', 'Subject router', 'review', 'codex/astra', 'prose · R1')] },
+        { title: 'Level 3', arrow: true, tasks: [t('T30.6', 'Retention policy', 'reviewed', 'claude/sonnet', 'prose · R0'), t('T30.7', 'Backpressure and drop counters', 'fixing', 'codex/astra', 'prose · R1')] },
+        { title: 'Level 4', arrow: false, tasks: [t('T30.8', 'Runbook and alerts', 'running', 'claude/haiku', 'mechanical'), t('T30.9', 'End-to-end telemetry test', 'pending', 'claude/sonnet', 'prose · risk high')] }
+      ],
+      gantt: [
+        { id: 'T30.1', bars: [bar(0, 14, I), bar(14, 6, R)] },
+        { id: 'T30.2', bars: [bar(0, 22, I), bar(22, 7, R)] },
+        { id: 'T30.3', bars: [bar(1, 11, I), bar(12, 5, R)] },
+        { id: 'T30.4', bars: [bar(30, 12, I), bar(42, 6, R)] },
+        { id: 'T30.5', bars: [bar(30, 20, I), bar(50, 6, R), bar(56, 14, F), bar(70, 8, R)] },
+        { id: 'T30.6', bars: [bar(48, 18, I), bar(66, 6, R)] },
+        { id: 'T30.7', bars: [bar(72, 12, I), bar(84, 5, R), bar(89, 9, F)] },
+        { id: 'T30.8', bars: [bar(80, 18, I)] },
+        { id: 'T30.9', bars: [] }
+      ],
+      term: [
+        { text: '● tack wave run 030 --wave 2 --run-id r63agm9er', color: '#C9CAFF' },
+        { text: '  level 3 · T30.7 round 1 · engine codex/astra (fix)', color: '#9BA1AB' },
+        { text: '  ↳ codex exec -s workspace-write  · files: services/telemetry/backpressure.ts', color: '#8B919B' },
+        { text: '  ✓ T30.6 reviewed by claude/sonnet · PASS · commit 4f2c91e', color: '#7FE3B5' },
+        { text: '  ◐ T30.5 review round 1 · reviewer claude/sonnet (independent of codex)', color: '#D4BEFF' },
+        { text: '  ✗ T30.7 R0 review: drop counter not exported to /metrics (1 Important)', color: '#FFA3A3' },
+        { text: '  ↻ T30.7 fix round 1 started · same engine', color: '#F5C46B' },
+        { text: '  ▸ T30.8 implementing · claude/haiku · writing docs/runbooks/telemetry.md', color: '#8FC4FF' },
+        { text: '  events.jsonl +4 · tokens 3.9M · $6.42', color: '#8B919B' },
+        { text: '▌', color: '#E8EAED' }
+      ],
+      keys: ['Esc', '↑', '↓', 'Enter', 'Tab', '1', '2', '3', 'Ctrl-C'],
+      detail: [
+        { k: 'Engine', v: 'codex · gpt-6-astra · medium' },
+        { k: 'Reviewer', v: 'claude · sonnet · high' },
+        { k: 'Kind / risk', v: 'prose · medium' },
+        { k: 'Depends', v: 'T30.2' },
+        { k: 'Files', v: 'services/telemetry/router.ts, services/telemetry/router.test.ts' },
+        { k: 'Teste', v: 'pnpm --filter telemetry test src/router.test.ts' },
+        { k: 'Commits', v: '9b1e0d2 · 2c77f4a' },
+        { k: 'Tokens', v: '612k · $0.94' }
+      ],
+      events: [
+        { t: '03:38', text: 'T30.8 running · claude/haiku', color: '#5AA9FF' },
+        { t: '03:36', text: 'T30.7 fixing · round 1', color: '#F5A524' },
+        { t: '03:35', text: 'T30.7 review FAIL · 1 Important', color: '#FF6B6B' },
+        { t: '03:31', text: 'T30.5 in review · round 1', color: '#B48CFF' },
+        { t: '03:29', text: 'T30.6 reviewed · PASS', color: '#3FCF8E' },
+        { t: '03:22', text: 'T30.5 review FAIL · 2 findings', color: '#FF6B6B' },
+        { t: '03:13', text: 'Level 1 complete · 3 commits', color: '#3FCF8E' },
+        { t: '03:01', text: 'Wave 2 started · worktree .worktrees/030-w2', color: '#8B8CFF' }
+      ],
+      cost: [
+        { model: 'claude/sonnet', usd: '$3.18', pct: 50, color: '#8B8CFF', note: 'reviews and 2 prose tasks' },
+        { model: 'codex/gpt-6-astra', usd: '$1.74', pct: 27, color: '#3FCF8E', note: '3 prose tasks, 2 fix rounds' },
+        { model: 'claude/haiku', usd: '$1.14', pct: 18, color: '#B48CFF', note: 'runbook, batch reviews' },
+        { model: 'codex/terra · luna', usd: '$0.36', pct: 5, color: '#5AA9FF', note: '3 mechanical tasks' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

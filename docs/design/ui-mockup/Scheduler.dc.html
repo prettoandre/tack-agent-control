@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Scheduler and queue — tack control</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0B0D}
+a{color:#A9AAFF;text-decoration:none}a:hover{color:#C9CAFF}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #0A0B0D; color: #E8EAED; font-family: Geist, system-ui, sans-serif; font-size: 13px; display: flex; flex-direction: column">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 28px; border-bottom: 1px solid #1C1F25; background: #0B0C0F">
+<div style="display: flex; align-items: center; gap: 12px">
+<a href="Main.dc.html" style="font-size: 12px; color: #9BA1AB">Fleet</a>
+<span aria-hidden="true" style="color: #3A3F48">/</span>
+<h1 style="margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.015em">Scheduler</h1>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<div role="group" aria-label="Range" style="display: flex; gap: 4px; background: #0D0F12; border: 1px solid #1F2329; border-radius: 8px; padding: 3px">
+<button type="button" style="height: 28px; padding: 0 12px; border-radius: 6px; border: 0; background: #1E2128; color: #E8EAED; font: inherit; font-size: 12px">Today</button>
+<button type="button" style="height: 28px; padding: 0 12px; border-radius: 6px; border: 0; background: transparent; color: #9BA1AB; font: inherit; font-size: 12px">Week</button>
+<button type="button" style="height: 28px; padding: 0 12px; border-radius: 6px; border: 0; background: transparent; color: #9BA1AB; font: inherit; font-size: 12px">Cron</button>
+</div>
+<button type="button" style="height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #2A2E36; background: #121418; color: #C5C9D0; font: inherit">New cron</button>
+<button type="button" style="height: 34px; padding: 0 14px; border-radius: 8px; border: 0; background: {{accent}}; color: #0A0B0D; font: inherit; font-weight: 600">Schedule wave</button>
+</div>
+</header>
+
+<div style="padding: 20px 28px 40px; display: flex; flex-direction: column; gap: 20px; max-width: 1440px; width: 100%; box-sizing: border-box">
+
+<section aria-labelledby="lanes-h" style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; display: flex; flex-direction: column">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px; border-bottom: 1px solid #1F2329">
+<h2 id="lanes-h" style="margin: 0; font-size: 14px; font-weight: 600">Thursday 16 Oct · host lanes</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 12px; font-size: 11.5px; color: #9BA1AB">
+<sc-for list="{{legend}}" as="l" hint-placeholder-count="5">
+<span style="display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 10px; height: 8px; border-radius: 2px; background: {{l.bg}}; border: 1px solid {{l.border}}"></span>{{l.label}}</span>
+</sc-for>
+</div>
+</div>
+<div style="overflow-x: auto; padding: 14px 16px 18px">
+<div style="min-width: 1040px; display: grid; grid-template-columns: 160px 1fr; gap: 10px 14px; align-items: stretch">
+<span></span>
+<div aria-hidden="true" style="position: relative; height: 16px; font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #8B919B">
+<sc-for list="{{hours}}" as="h" hint-placeholder-count="13">
+<span style="position: absolute; left: {{h.left}}%; transform: translateX(-50%)">{{h.label}}</span>
+</sc-for>
+</div>
+<sc-for list="{{lanes}}" as="ln" hint-placeholder-count="5">
+<div style="display: flex; flex-direction: column; gap: 3px; justify-content: center">
+<span style="font-weight: 500">{{ln.name}}</span>
+<span style="font-size: 11px; color: #8B919B">{{ln.sub}}</span>
+</div>
+<div style="position: relative; height: 44px; background: #0D0F12; border: 1px solid #1A1D22; border-radius: 8px; overflow: hidden">
+<span aria-hidden="true" style="position: absolute; top: 0; bottom: 0; left: {{ln.now}}%; width: 2px; background: #FF6B6B"></span>
+<sc-for list="{{ln.blocks}}" as="b" hint-placeholder-count="4">
+<span style="position: absolute; top: 6px; bottom: 6px; left: {{b.left}}%; width: {{b.width}}%; border-radius: 6px; background: {{b.bg}}; border: 1px solid {{b.border}}; color: {{b.fg}}; font-size: 11px; padding: 0 8px; display: flex; align-items: center; overflow: hidden; white-space: nowrap; box-sizing: border-box">{{b.label}}</span>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<section aria-labelledby="queue-h" style="flex: 999 1 600px; min-width: 0; background: #111317; border: 1px solid #1F2329; border-radius: 12px; display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #1F2329">
+<h2 id="queue-h" style="margin: 0; font-size: 14px; font-weight: 600">Queue</h2>
+<span style="font-size: 12px; color: #8B919B">7 waiting · dispatch order by priority, then age</span>
+</div>
+<ol style="list-style: none; margin: 0; padding: 0">
+<sc-for list="{{queue}}" as="q" hint-placeholder-count="7">
+<li style="display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 16px; border-top: 1px solid #1A1D22">
+<span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8B919B">{{q.pos}}</span>
+<div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+<span style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: {{q.color}}"></span><span style="color: #E8EAED">{{q.what}}</span><span style="font-size: 11px; padding: 1px 6px; border-radius: 5px; background: #1A1D23; color: #9BA1AB">{{q.prio}}</span></span>
+<span style="font-size: 11.5px; color: #9BA1AB">{{q.why}}</span>
+</div>
+<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px">
+<span style="font-size: 11.5px; padding: 2px 8px; border-radius: 99px; background: {{q.gateBg}}; color: {{q.gateFg}}; white-space: nowrap">{{q.gate}}</span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #8B919B">{{q.eta}}</span>
+</div>
+</li>
+</sc-for>
+</ol>
+</section>
+
+<div style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+<section aria-labelledby="cron-h" style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<h2 id="cron-h" style="margin: 0; font-size: 14px; font-weight: 600">Recurring</h2>
+<sc-for list="{{crons}}" as="c" hint-placeholder-count="4">
+<div style="border: 1px solid #22262D; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 6px; background: #0F1114">
+<div style="display: flex; justify-content: space-between; gap: 8px"><span style="color: #E8EAED; font-weight: 500">{{c.name}}</span><span style="font-size: 11px; color: {{c.stateFg}}">{{c.state}}</span></div>
+<span style="font-family: 'Geist Mono', monospace; font-size: 11.5px; color: #C9CAFF">{{c.cron}}</span>
+<span style="font-size: 11.5px; color: #9BA1AB">{{c.does}}</span>
+<span style="font-size: 11px; color: #8B919B">{{c.last}}</span>
+</div>
+</sc-for>
+</section>
+
+<section aria-labelledby="cap-h" style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<h2 id="cap-h" style="margin: 0; font-size: 14px; font-weight: 600">Capacity rules</h2>
+<sc-for list="{{caps}}" as="c" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; font-size: 12px"><span style="color: #E8EAED">{{c.name}}</span><span style="color: #9BA1AB; font-variant-numeric: tabular-nums">{{c.text}}</span></div>
+<div aria-hidden="true" style="display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 3px">
+<sc-for list="{{c.cells}}" as="x" hint-placeholder-count="10"><span style="height: 8px; border-radius: 2px; background: {{x}}"></span></sc-for>
+</div>
+<span style="font-size: 11.5px; color: #8B919B">{{c.rule}}</span>
+</div>
+</sc-for>
+</section>
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#8B8CFF","options":["#8B8CFF","#5AA9FF","#3FCF8E","#F5A524"]},"$preview":{"width":1440,"height":1120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const span = (h0, h1) => ({ left: (h0 / 24) * 100, width: ((h1 - h0) / 24) * 100 });
+    const K = {
+      done: { bg: '#3FCF8E1F', border: '#2E6B52', fg: '#9BE8C4' },
+      run: { bg: '#5AA9FF26', border: '#3A6FA8', fg: '#BBDBFF' },
+      sched: { bg: '#8B8CFF1A', border: '#4E4FA8', fg: '#D2D3FF' },
+      cron: { bg: '#B48CFF1A', border: '#6A4FA0', fg: '#E1D1FF' },
+      hold: { bg: '#F5A5241A', border: '#7A5A1E', fg: '#F7D08A' }
+    };
+    const blk = (h0, h1, k, label) => Object.assign({ label }, span(h0, h1), K[k]);
+    const cells = (used, max, color) => Array.from({ length: 10 }, (_, i) => i < used ? color : i < max ? '#262A31' : '#15181D');
+    const gate = (label, kind) => kind === 'ok' ? { gate: label, gateBg: '#3FCF8E1F', gateFg: '#7FE3B5' } : kind === 'wait' ? { gate: label, gateBg: '#F5A5241F', gateFg: '#F5C46B' } : { gate: label, gateBg: '#1A1D23', gateFg: '#9BA1AB' };
+    return {
+      accent: this.props.accent ?? '#8B8CFF',
+      now: (3.65 / 24) * 100,
+      hours: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24].map((h) => ({ label: String(h).padStart(2, '0') + ':00', left: (h / 24) * 100 })),
+      legend: [
+        { label: 'Finished', bg: K.done.bg, border: K.done.border },
+        { label: 'Running', bg: K.run.bg, border: K.run.border },
+        { label: 'Scheduled', bg: K.sched.bg, border: K.sched.border },
+        { label: 'Recurring', bg: K.cron.bg, border: K.cron.border },
+        { label: 'Held', bg: K.hold.bg, border: K.hold.border }
+      ],
+      lanes: [
+        { name: 'devbox-homelab', sub: '6 slots · tack, tack-agent-control', blocks: [blk(0.6, 3.0, 'done', 'tack 001 · 1a'), blk(3.0, 5.2, 'run', 'tack-agent-control 003 w2'), blk(7.2, 9.6, 'sched', 'leiloes 006 w1'), blk(13, 15.5, 'sched', 'tack 001 · 1b')] },
+        { name: 'devbox-htz', sub: '8 slots · sigamobilidade, scaii', blocks: [blk(1.0, 3.0, 'done', 'siga 041 w1'), blk(3.0, 4.4, 'run', 'siga 030 w2'), blk(4.5, 6.5, 'sched', 'siga 030 w3'), blk(10, 12.5, 'sched', 'scaii 012 w2')] },
+        { name: 'devbox-htz · scaii', sub: 'project cap 2', blocks: [blk(2.6, 3.7, 'run', 'scaii 012 w1'), blk(4.0, 5.5, 'hold', 'scaii 014 w3 retry')] },
+        { name: 'Recurring', sub: 'cron on agent-control', blocks: [blk(6, 6.6, 'cron', 'tack upgrade'), blk(9, 9.5, 'cron', 'superpowers'), blk(18, 18.6, 'cron', 'nightly gates')] },
+        { name: 'Owner hours', sub: 'answers expected', blocks: [blk(8, 12, 'hold', 'reachable'), blk(14, 19, 'hold', 'reachable')] }
+      ].map((l) => Object.assign({ now: (3.65 / 24) * 100 }, l)),
+      queue: [
+        Object.assign({ pos: '1', what: 'scaii · 014 ixbr-pix-traffic · wave 3 retry', prio: 'P1', why: 'Claude Max window at 62% · resumes when it resets', eta: '04:00', color: '#F5A524' }, gate('Quota hold', 'wait')),
+        Object.assign({ pos: '2', what: 'sigamobilidade · 030 nats-telemetria · wave 3', prio: 'P1', why: 'Wave 2 PR must merge first (one PR per wave)', eta: '≈04:30', color: '#5AA9FF' }, gate('Waits on PR', 'wait')),
+        Object.assign({ pos: '3', what: 'leiloes_veiculos · 006 lances-ao-vivo · wave 1', prio: 'P2', why: 'Next free slot on devbox-homelab', eta: '07:15', color: '#3FCF8E' }, gate('Ready', 'ok')),
+        Object.assign({ pos: '4', what: 'scaii · 012 bgp-rib-ceiling · wave 2', prio: 'P2', why: 'Project cap 2 on devbox-htz reached', eta: '10:00', color: '#F5A524' }, gate('Project cap', 'wait')),
+        Object.assign({ pos: '5', what: 'tack · 001 sdd-contract-v1 · part 1b', prio: 'P2', why: 'Starts after 1a is reviewed and merged', eta: '13:00', color: '#8B8CFF' }, gate('Waits on PR', 'wait')),
+        Object.assign({ pos: '6', what: 'tack-agent-control · 003 web-ui · wave 3', prio: 'P3', why: 'Depends on wave 2 (running)', eta: '—', color: '#B48CFF' }, gate('Blocked by wave', 'idle')),
+        Object.assign({ pos: '7', what: 'sigamobilidade · 042 tenant-audit · wave 1', prio: 'P3', why: 'Spec approved; plan validated by tack', eta: '—', color: '#5AA9FF' }, gate('Ready', 'ok'))
+      ],
+      crons: [
+        { name: 'tack upgrade check', cron: '0 6 * * *', does: 'Opens a "tack upgrade" PR in each project when a new tack release exists', last: 'Last run 06:00 yesterday · 2 PRs opened', state: 'Active', stateFg: '#7FE3B5' },
+        { name: 'Superpowers upstream', cron: '0 9 * * 1', does: 'Bumps the vendored Superpowers in tack and runs the regression suite', last: 'Last run Mon 09:00 · no new release', state: 'Active', stateFg: '#7FE3B5' },
+        { name: 'Nightly gates', cron: '0 18 * * *', does: 'Runs each project gate on main; opens a fix spec when red', last: 'Last run 18:00 · 4 green, 1 red (scaii)', state: 'Active', stateFg: '#7FE3B5' },
+        { name: 'Cleanup merged worktrees', cron: '30 2 * * *', does: 'tack wt remove for merged waves on every host', last: 'Paused by owner', state: 'Paused', stateFg: '#F5C46B' }
+      ],
+      caps: [
+        { name: 'devbox-homelab', text: '5 of 6 slots', rule: 'Max 6 concurrent runs; 64 subagents per run', cells: cells(5, 6, '#5AA9FF') },
+        { name: 'devbox-htz', text: '6 of 8 slots', rule: 'Max 8 concurrent runs; scaii capped at 2', cells: cells(6, 8, '#5AA9FF') },
+        { name: 'Claude Max · owner', text: '62% of window', rule: 'Hold new claude-heavy waves above 85%', cells: cells(6, 10, '#8B8CFF') },
+        { name: 'Codex Pro · owner', text: '38% of window', rule: 'Prefer codex for mechanical tasks while Claude is above 70%', cells: cells(4, 10, '#3FCF8E') }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
