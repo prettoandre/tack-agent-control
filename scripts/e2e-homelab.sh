@@ -7,7 +7,7 @@
 #   TAC_E2E_PROJECTS / TAC_E2E_HOSTS  YAML files (default: examples/*.yaml)
 #   TAC_E2E_DB          control sqlite path (default: ./tac-e2e.sqlite)
 #   TAC_E2E_HOST        host name in the hosts YAML that must be ok (default: devbox-homelab)
-#   TAC_E2E_PROJECT     project to dispatch (default: tac-e2e)
+#   TAC_E2E_PROJECT     project to dispatch (default: tack-e2e)
 #   TAC_E2E_PLAN        plan path in that repo (default: docs/superpowers/plans/2026-10-15-hello.md)
 #   TAC_E2E_TIMEOUT_S   polling budget in seconds (default: 900)
 set -euo pipefail
@@ -17,7 +17,7 @@ cd "$(dirname "$0")/.."
 PROJECTS=${TAC_E2E_PROJECTS:-examples/projects.yaml}
 HOSTS=${TAC_E2E_HOSTS:-examples/hosts.yaml}
 HOST=${TAC_E2E_HOST:-devbox-homelab}
-PROJECT=${TAC_E2E_PROJECT:-tac-e2e}
+PROJECT=${TAC_E2E_PROJECT:-tack-e2e}
 PLAN=${TAC_E2E_PLAN:-docs/superpowers/plans/2026-10-15-hello.md}
 TIMEOUT_S=${TAC_E2E_TIMEOUT_S:-900}
 export TAC_URL=http://127.0.0.1:7780
