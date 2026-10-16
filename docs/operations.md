@@ -117,9 +117,12 @@ A `--` separator is not supported for them: `pane send-text <pane> -- "x"` types
 
 `scripts/e2e-homelab.sh` (reads the token from `TAC_E2E_TOKEN_FILE`) reuses a control already listening on
 `127.0.0.1:7780`, or starts one, waits for the host to be `ok`, dispatches the hello plan of the private repo
-`tac-e2e` and polls `tac show` every 10 s for up to 15 minutes.
+`tack-e2e` and polls `tac show` every 10 s for up to 15 minutes.
 
 ## E2E results (2026-10-15)
+
+The test repository was renamed from `prettoandre/tac-e2e` to `prettoandre/tack-e2e` on 2026-10-16; the
+records below keep the names used at the time. PR #2 and the remote `run/*` branches were closed and deleted then.
 
 Setup: control on the Mac (`127.0.0.1:7780`, dev login), runner on devbox-homelab (`devbox-local` on the tailnet)
 with a dedicated herdr session `tac-e2e`, private repo `prettoandre/tac-e2e` with the hello plan on `main`.
