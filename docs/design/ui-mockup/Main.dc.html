@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fleet overview — tack control</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0B0D}
+a{color:#A9AAFF;text-decoration:none}a:hover{color:#C9CAFF}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #0A0B0D; color: #E8EAED; font-family: Geist, system-ui, sans-serif; font-size: 13px; display: flex; flex-wrap: wrap; align-items: stretch">
+
+<nav aria-label="Primary" style="flex: 1 1 232px; max-width: 248px; background: #0D0E11; border-right: 1px solid #1C1F25; padding: 16px 12px; display: flex; flex-direction: column; gap: 20px; box-sizing: border-box">
+<div style="display: flex; align-items: center; gap: 10px; padding: 4px 8px">
+<div style="width: 26px; height: 26px; border-radius: 7px; background: #8B8CFF; display: flex; align-items: center; justify-content: center">
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0A0B0D" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14M12 5v14"></path></svg>
+</div>
+<div style="display: flex; flex-direction: column">
+<span style="font-weight: 600; font-size: 14px; letter-spacing: -0.01em">tack · control</span>
+<span style="font-size: 11px; color: #8B919B">owner workspace</span>
+</div>
+</div>
+<a href="#" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 36px; padding: 0 10px; border: 1px solid #22262D; border-radius: 8px; background: #121418; color: #9BA1AB">
+<span style="display: flex; align-items: center; gap: 8px"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>Search runs, specs, hosts</span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 11px; border: 1px solid #2A2E36; border-radius: 4px; padding: 1px 5px">⌘K</span>
+</a>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{nav}}" as="n" hint-placeholder-count="7">
+<a href="{{n.href}}" style="display: flex; align-items: center; justify-content: space-between; height: 34px; padding: 0 10px; border-radius: 7px; color: {{n.color}}; background: {{n.bg}}">
+<span style="display: flex; align-items: center; gap: 10px"><span aria-hidden="true" style="width: 6px; height: 6px; border-radius: 2px; background: {{n.dot}}"></span>{{n.label}}</span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #8B919B">{{n.count}}</span>
+</a>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #8B919B; padding: 0 10px 6px">Projects</span>
+<sc-for list="{{projects}}" as="p" hint-placeholder-count="5">
+<a href="#" style="display: flex; align-items: center; justify-content: space-between; height: 32px; padding: 0 10px; border-radius: 7px; color: #C5C9D0">
+<span style="display: flex; align-items: center; gap: 10px"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: {{p.color}}"></span>{{p.name}}</span>
+<span style="font-size: 11px; color: #8B919B">{{p.runs}}</span>
+</a>
+</sc-for>
+</div>
+<div style="margin-top: auto; border: 1px solid #1C1F25; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: #101216">
+<span style="font-size: 12px; color: #C5C9D0; font-weight: 500">Tailnet</span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #9BA1AB"><span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: #3FCF8E"></span>tail39ebd · 3 runners healthy</span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #8B919B">control v0.4.0 · tack 0.5.0</span>
+</div>
+</nav>
+
+<main style="flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column">
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 28px; border-bottom: 1px solid #1C1F25; background: #0B0C0F">
+<div style="display: flex; align-items: center; gap: 10px">
+<h1 style="margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.015em">Fleet</h1>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 99px; background: rgba(63,207,142,0.12); color: #6FE0AE; font-size: 12px"><span aria-hidden="true" style="width: 6px; height: 6px; border-radius: 50%; background: #3FCF8E"></span>Live</span>
+<span style="color: #8B919B; font-size: 12px">Updated 2 s ago</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<button type="button" style="height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #2A2E36; background: #121418; color: #C5C9D0; font: inherit; display: inline-flex; align-items: center; gap: 8px">Last 24 h<svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"></path></svg></button>
+<button type="button" style="height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #2A2E36; background: #121418; color: #C5C9D0; font: inherit">Pause queue</button>
+<button type="button" style="height: 34px; padding: 0 14px; border-radius: 8px; border: 0; background: {{accent}}; color: #0A0B0D; font: inherit; font-weight: 600; display: inline-flex; align-items: center; gap: 8px"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"></path></svg>Dispatch wave</button>
+<span aria-label="Signed in as owner" role="img" style="width: 32px; height: 32px; border-radius: 50%; background: #2A2E5C; color: #C9CAFF; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px">AP</span>
+</div>
+</header>
+
+<div style="padding: 24px 28px 40px; display: flex; flex-direction: column; gap: 20px; max-width: 1400px; box-sizing: border-box; width: 100%">
+
+<section aria-label="Key figures" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px">
+<sc-for list="{{kpis}}" as="k" hint-placeholder-count="5">
+<div style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<span style="display: flex; align-items: center; gap: 8px; color: #9BA1AB; font-size: 12px"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 2px; background: {{k.color}}"></span>{{k.label}}</span>
+<span style="font-size: 28px; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums">{{k.value}}</span>
+<div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 8px">
+<span style="font-size: 12px; color: #8B919B">{{k.sub}}</span>
+<div aria-hidden="true" style="display: flex; align-items: flex-end; gap: 2px; height: 22px">
+<sc-for list="{{k.spark}}" as="s" hint-placeholder-count="12">
+<span style="width: 4px; height: {{s.h}}px; border-radius: 1px; background: {{k.color}}; opacity: {{s.o}}"></span>
+</sc-for>
+</div>
+</div>
+</div>
+</sc-for>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<div style="flex: 999 1 620px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+
+<section aria-labelledby="hosts-h" style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: baseline; justify-content: space-between">
+<h2 id="hosts-h" style="margin: 0; font-size: 14px; font-weight: 600">Hosts</h2>
+<a href="#" style="font-size: 12px">Manage hosts</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px">
+<sc-for list="{{hosts}}" as="h" hint-placeholder-count="3">
+<article style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span style="font-weight: 600; font-size: 14px">{{h.name}}</span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #8B919B">{{h.addr}}</span>
+</div>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: 99px; background: {{h.statusBg}}; color: {{h.statusFg}}; font-size: 11px; font-weight: 500"><span aria-hidden="true" style="width: 6px; height: 6px; border-radius: 50%; background: {{h.statusDot}}"></span>{{h.status}}</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+<sc-for list="{{h.meters}}" as="m" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="display: flex; justify-content: space-between; font-size: 11px; color: #9BA1AB"><span>{{m.label}}</span><span style="color: #C5C9D0; font-variant-numeric: tabular-nums">{{m.text}}</span></span>
+<span aria-hidden="true" style="height: 4px; border-radius: 2px; background: #1E2228; overflow: hidden; display: block"><span style="display: block; height: 100%; width: {{m.pct}}%; background: {{m.color}}; border-radius: 2px"></span></span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="display: flex; justify-content: space-between; font-size: 11px; color: #9BA1AB"><span>Agent slots</span><span style="font-variant-numeric: tabular-nums; color: #C5C9D0">{{h.slotsText}}</span></span>
+<div aria-hidden="true" style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px">
+<sc-for list="{{h.slots}}" as="s" hint-placeholder-count="8">
+<span style="height: 20px; border-radius: 4px; background: {{s.bg}}; border: 1px solid {{s.border}}"></span>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{h.tags}}" as="t" hint-placeholder-count="3">
+<span style="font-size: 11px; color: #9BA1AB; border: 1px solid #262A31; border-radius: 6px; padding: 2px 7px">{{t}}</span>
+</sc-for>
+</div>
+</article>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="runs-h" style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; display: flex; flex-direction: column">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px; border-bottom: 1px solid #1F2329">
+<h2 id="runs-h" style="margin: 0; font-size: 14px; font-weight: 600">Active runs</h2>
+<div role="group" aria-label="Filter runs" style="display: flex; gap: 4px; background: #0D0F12; border: 1px solid #1F2329; border-radius: 8px; padding: 3px">
+<button type="button" style="height: 26px; padding: 0 10px; border-radius: 6px; border: 0; background: #1E2128; color: #E8EAED; font: inherit; font-size: 12px">All 24</button>
+<button type="button" style="height: 26px; padding: 0 10px; border-radius: 6px; border: 0; background: transparent; color: #9BA1AB; font: inherit; font-size: 12px">Running 14</button>
+<button type="button" style="height: 26px; padding: 0 10px; border-radius: 6px; border: 0; background: transparent; color: #9BA1AB; font: inherit; font-size: 12px">Needs you 3</button>
+<button type="button" style="height: 26px; padding: 0 10px; border-radius: 6px; border: 0; background: transparent; color: #9BA1AB; font: inherit; font-size: 12px">Queued 7</button>
+</div>
+</div>
+<div style="overflow-x: auto">
+<table style="width: 100%; min-width: 820px; border-collapse: collapse; font-size: 12.5px">
+<thead>
+<tr style="color: #8B919B; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em">
+<th scope="col" style="padding: 10px 16px; font-weight: 500">Run</th>
+<th scope="col" style="padding: 10px 8px; font-weight: 500">Spec · wave</th>
+<th scope="col" style="padding: 10px 8px; font-weight: 500">Progress</th>
+<th scope="col" style="padding: 10px 8px; font-weight: 500">State</th>
+<th scope="col" style="padding: 10px 8px; font-weight: 500">Engines</th>
+<th scope="col" style="padding: 10px 8px; font-weight: 500">Host</th>
+<th scope="col" style="padding: 10px 16px 10px 8px; font-weight: 500; text-align: right">Cost</th>
+</tr>
+</thead>
+<tbody>
+<sc-for list="{{runs}}" as="r" hint-placeholder-count="7">
+<tr style="border-top: 1px solid #1A1D22">
+<td style="padding: 12px 16px; white-space: nowrap"><a href="Run.dc.html" style="font-family: 'Geist Mono', monospace; color: #C9CAFF">{{r.id}}</a><div style="color: #8B919B; font-size: 11.5px; margin-top: 3px">{{r.project}}</div></td>
+<td style="padding: 12px 8px"><div style="color: #E8EAED">{{r.spec}}</div><div style="color: #8B919B; font-size: 11.5px; margin-top: 3px">{{r.wave}}</div></td>
+<td style="padding: 12px 8px; width: 170px">
+<div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="flex: 1; height: 5px; border-radius: 3px; background: #1E2228; display: block; overflow: hidden"><span style="display: block; height: 100%; width: {{r.pct}}%; background: {{r.color}}"></span></span><span style="font-variant-numeric: tabular-nums; color: #C5C9D0; font-size: 11.5px">{{r.tasks}}</span></div>
+</td>
+<td style="padding: 12px 8px"><span style="display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: 99px; background: {{r.stateBg}}; color: {{r.stateFg}}; font-size: 11.5px; white-space: nowrap"><span aria-hidden="true" style="width: 6px; height: 6px; border-radius: 50%; background: {{r.color}}"></span>{{r.state}}</span></td>
+<td style="padding: 12px 8px"><div style="display: flex; gap: 4px; flex-wrap: wrap">
+<sc-for list="{{r.engines}}" as="e" hint-placeholder-count="2"><span style="font-family: 'Geist Mono', monospace; font-size: 10.5px; padding: 2px 6px; border-radius: 5px; background: {{e.bg}}; color: {{e.fg}}">{{e.label}}</span></sc-for>
+</div></td>
+<td style="padding: 12px 8px; color: #C5C9D0; white-space: nowrap">{{r.host}}<div style="color: #8B919B; font-size: 11.5px; margin-top: 3px">{{r.elapsed}}</div></td>
+<td style="padding: 12px 16px 12px 8px; text-align: right; font-variant-numeric: tabular-nums; color: #E8EAED">{{r.cost}}</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+
+<aside style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+
+<section aria-labelledby="needs-h" style="background: #111317; border: 1px solid #3A2E15; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h2 id="needs-h" style="margin: 0; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: #F5A524"></span>Needs you</h2>
+<span style="font-size: 12px; color: #F5C46B">3 waiting</span>
+</div>
+<sc-for list="{{needs}}" as="n" hint-placeholder-count="3">
+<div style="border: 1px solid #262A31; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: #0F1114">
+<div style="display: flex; justify-content: space-between; gap: 8px; font-size: 12px"><span style="font-family: 'Geist Mono', monospace; color: #C9CAFF">{{n.run}}</span><span style="color: #8B919B">{{n.age}}</span></div>
+<span style="color: #E8EAED; line-height: 1.45">{{n.ask}}</span>
+<code style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #9BA1AB; background: #0A0B0D; border: 1px solid #1C1F25; border-radius: 6px; padding: 6px 8px; overflow-wrap: anywhere">{{n.detail}}</code>
+<div style="display: flex; gap: 6px">
+<button type="button" style="flex: 1; height: 32px; border-radius: 7px; border: 0; background: #F5A524; color: #1A1204; font: inherit; font-weight: 600; font-size: 12px">{{n.primary}}</button>
+<a href="Run.dc.html" style="flex: 1; height: 32px; border-radius: 7px; border: 1px solid #2A2E36; color: #C5C9D0; font-size: 12px; display: inline-flex; align-items: center; justify-content: center">Open terminal</a>
+</div>
+</div>
+</sc-for>
+</section>
+
+<section aria-labelledby="next-h" style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: baseline; justify-content: space-between">
+<h2 id="next-h" style="margin: 0; font-size: 14px; font-weight: 600">Next 6 hours</h2>
+<a href="Scheduler.dc.html" style="font-size: 12px">Scheduler</a>
+</div>
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+<sc-for list="{{upcoming}}" as="u" hint-placeholder-count="5">
+<li style="display: grid; grid-template-columns: 52px 14px 1fr; gap: 8px; align-items: start; padding: 7px 0">
+<span style="font-family: 'Geist Mono', monospace; font-size: 11.5px; color: #9BA1AB; padding-top: 1px">{{u.at}}</span>
+<span aria-hidden="true" style="width: 9px; height: 9px; margin-top: 3px; border-radius: 3px; border: 2px solid {{u.color}}"></span>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="color: #E8EAED">{{u.what}}</span><span style="font-size: 11.5px; color: #8B919B">{{u.why}}</span></span>
+</li>
+</sc-for>
+</ol>
+</section>
+
+<section aria-labelledby="quota-h" style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<h2 id="quota-h" style="margin: 0; font-size: 14px; font-weight: 600">Account windows</h2>
+<sc-for list="{{quotas}}" as="q" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 7px">
+<div style="display: flex; justify-content: space-between; gap: 8px; font-size: 12px"><span style="color: #E8EAED">{{q.name}}</span><span style="color: #9BA1AB; font-variant-numeric: tabular-nums">{{q.text}}</span></div>
+<span aria-hidden="true" style="height: 6px; border-radius: 3px; background: #1E2228; display: block; overflow: hidden"><span style="display: block; height: 100%; width: {{q.pct}}%; background: {{q.color}}"></span></span>
+<span style="font-size: 11.5px; color: #8B919B">{{q.note}}</span>
+</div>
+</sc-for>
+</section>
+</aside>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#8B8CFF","options":["#8B8CFF","#5AA9FF","#3FCF8E","#F5A524"]},"$preview":{"width":1440,"height":1220}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const C = { run: '#5AA9FF', wait: '#F5A524', block: '#FF6B6B', done: '#3FCF8E', queue: '#8B919B', review: '#B48CFF' };
+    const pill = (c) => ({ bg: c + '22', fg: c });
+    const spark = (xs) => xs.map((h, i) => ({ h: h, o: 0.35 + (i / xs.length) * 0.65 }));
+    const slots = (busy, wait, total) => Array.from({ length: 8 }, (_, i) => i < busy ? { bg: '#5AA9FF33', border: '#5AA9FF66' } : i < busy + wait ? { bg: '#F5A52433', border: '#F5A52466' } : i < total ? { bg: '#15181D', border: '#262A31' } : { bg: 'transparent', border: '#1A1D22' });
+    const eng = (label) => label.startsWith('codex') ? { label: label, bg: '#3FCF8E1A', fg: '#7FE3B5' } : { label: label, bg: '#8B8CFF1F', fg: '#C9CAFF' };
+    const run = (id, project, spec, wave, done, total, state, color, engines, host, elapsed, cost) => {
+      const p = pill(color);
+      return { id, project, spec, wave, tasks: done + '/' + total, pct: Math.round((done / total) * 100), state, color, stateBg: p.bg, stateFg: p.fg, engines: engines.map(eng), host, elapsed, cost };
+    };
+    return {
+      accent: this.props.accent ?? '#8B8CFF',
+      nav: [
+        { label: 'Fleet', href: '#', count: '', color: '#E8EAED', bg: '#1A1D23', dot: '#8B8CFF' },
+        { label: 'Runs', href: 'Run.dc.html', count: '24', color: '#C5C9D0', bg: 'transparent', dot: '#5AA9FF' },
+        { label: 'Specs', href: '#', count: '41', color: '#C5C9D0', bg: 'transparent', dot: '#B48CFF' },
+        { label: 'Scheduler', href: 'Scheduler.dc.html', count: '7', color: '#C5C9D0', bg: 'transparent', dot: '#F5A524' },
+        { label: 'Telemetry', href: '#', count: '', color: '#C5C9D0', bg: 'transparent', dot: '#3FCF8E' },
+        { label: 'Hosts', href: '#', count: '3', color: '#C5C9D0', bg: 'transparent', dot: '#8B919B' },
+        { label: 'Settings', href: '#', count: '', color: '#C5C9D0', bg: 'transparent', dot: '#3A3F48' }
+      ],
+      projects: [
+        { name: 'sigamobilidade', color: '#5AA9FF', runs: '9' },
+        { name: 'scaii', color: '#F5A524', runs: '6' },
+        { name: 'tack', color: '#8B8CFF', runs: '5' },
+        { name: 'tack-agent-control', color: '#B48CFF', runs: '3' },
+        { name: 'leiloes_veiculos', color: '#3FCF8E', runs: '1' }
+      ],
+      kpis: [
+        { label: 'Running', value: '14', sub: 'across 2 devboxes', color: C.run, spark: spark([6, 8, 7, 10, 12, 9, 11, 14, 13, 15, 16, 18]) },
+        { label: 'Needs you', value: '3', sub: 'oldest 6 min', color: C.wait, spark: spark([2, 4, 3, 2, 5, 3, 2, 4, 6, 3, 4, 5]) },
+        { label: 'Queued', value: '7', sub: '2 wait on a merge', color: C.queue, spark: spark([9, 8, 10, 7, 6, 9, 8, 7, 6, 8, 7, 7]) },
+        { label: 'PRs opened today', value: '11', sub: '9 gates green', color: C.done, spark: spark([1, 2, 2, 3, 5, 4, 6, 7, 8, 9, 10, 11]) },
+        { label: 'Spend today', value: '$48.20', sub: '18.4M tokens · 61% cache', color: '#8B8CFF', spark: spark([3, 5, 4, 6, 8, 7, 9, 10, 12, 11, 13, 15]) }
+      ],
+      hosts: [
+        { name: 'devbox-homelab', addr: 'devbox-local.tail39ebd.ts.net · :7781', status: 'Healthy', statusBg: '#3FCF8E1F', statusFg: '#7FE3B5', statusDot: '#3FCF8E',
+          meters: [{ label: 'CPU', text: '38%', pct: 38, color: '#5AA9FF' }, { label: 'RAM', text: '21/64 GB', pct: 33, color: '#B48CFF' }, { label: 'Disk', text: '412 GB', pct: 46, color: '#8B919B' }],
+          slotsText: '5 busy · 1 waiting · 6 max', slots: slots(5, 1, 6), tags: ['proxmox', 'herdr 0.9.3', 'sandbox on'] },
+        { name: 'devbox-htz', addr: 'devbox-htz.tail39ebd.ts.net · :7781', status: 'Healthy', statusBg: '#3FCF8E1F', statusFg: '#7FE3B5', statusDot: '#3FCF8E',
+          meters: [{ label: 'CPU', text: '64%', pct: 64, color: '#5AA9FF' }, { label: 'RAM', text: '37/64 GB', pct: 58, color: '#B48CFF' }, { label: 'Disk', text: '690 GB', pct: 71, color: '#F5A524' }],
+          slotsText: '6 busy · 2 waiting · 8 max', slots: slots(6, 2, 8), tags: ['hetzner', 'herdr 0.9.3', 'docker rootless'] },
+        { name: 'agent-control', addr: 'agent-control.tail39ebd.ts.net · serve', status: 'Control plane', statusBg: '#8B8CFF1F', statusFg: '#C9CAFF', statusDot: '#8B8CFF',
+          meters: [{ label: 'CPU', text: '6%', pct: 6, color: '#5AA9FF' }, { label: 'RAM', text: '1.1/4 GB', pct: 28, color: '#B48CFF' }, { label: 'OTel', text: '2.3k ev/s', pct: 40, color: '#3FCF8E' }],
+          slotsText: 'no agents · scheduler + telemetry', slots: slots(0, 0, 0), tags: ['sqlite', 'otel collector', 'tag:agent-control'] }
+      ],
+      runs: [
+        run('r63agm9er', 'sigamobilidade', '030 · nats-telemetria', 'wave 2 of 3 · spec/030-nats-telemetria-w2', 7, 9, 'Running', C.run, ['codex/astra', 'claude/sonnet'], 'devbox-htz', '38 min', '$6.42'),
+        run('rk2dn6su0', 'scaii', '012 · bgp-rib-ceiling', 'wave 1 of 2', 3, 6, 'Needs you', C.wait, ['claude/opus'], 'devbox-htz', '21 min', '$4.10'),
+        run('rb3n0dw66', 'tack', '001 · sdd-contract-v1', 'wave 1a of 3 · 10 tasks', 9, 10, 'In review', C.review, ['claude/opus'], 'devbox-homelab', '2 h 04', '$18.75'),
+        run('ro1bqpflk', 'sigamobilidade', '041 · wal-archive', 'wave 1 of 1', 4, 4, 'Gate', C.run, ['codex/terra'], 'devbox-htz', '12 min', '$1.36'),
+        run('rqzrccjx0', 'tack-agent-control', '003 · web-ui', 'wave 2 of 4', 2, 7, 'Running', C.run, ['claude/sonnet', 'codex/astra'], 'devbox-homelab', '17 min', '$2.88'),
+        run('r7kwb6zd5', 'scaii', '014 · ixbr-pix-traffic', 'wave 3 of 3', 5, 8, 'Blocked', C.block, ['codex/astra'], 'devbox-htz', '44 min', '$5.02'),
+        run('rkabyu0u6', 'leiloes_veiculos', '006 · lances-ao-vivo', 'wave 1 of 2', 0, 5, 'Queued', C.queue, ['claude/haiku'], 'devbox-homelab', 'in queue', '—')
+      ],
+      needs: [
+        { run: 'rk2dn6su0', age: '6 min', ask: 'Claude asks to run a migration against the staging ClickHouse.', detail: 'Bash(clickhouse-client --host stg-ch …)', primary: 'Approve once' },
+        { run: 'r7kwb6zd5', age: '11 min', ask: 'T14.6 blocked after round 2: gate red on ruff format.', detail: 'scripts/gate.sh · 1 failure · fix round exhausted', primary: 'Retry on opus' },
+        { run: 'rqzrccjx0', age: '2 min', ask: 'Trust dialog for a new worktree on devbox-homelab.', detail: '~/worktrees/tack-agent-control/003-w2', primary: 'Trust folder' }
+      ],
+      upcoming: [
+        { at: '04:00', what: 'scaii · 014 wave 3 retry', why: 'after quota window resets', color: '#F5A524' },
+        { at: '04:30', what: 'sigamobilidade · 030 wave 3', why: 'starts when PR #164 merges', color: '#5AA9FF' },
+        { at: '06:00', what: 'tack upgrade check · all projects', why: 'daily cron · opens PRs', color: '#8B8CFF' },
+        { at: '07:15', what: 'leiloes_veiculos · 006 wave 1', why: 'queued · slot on devbox-homelab', color: '#8B919B' },
+        { at: '09:00', what: 'superpowers upstream check', why: 'weekly cron · tack repo', color: '#B48CFF' }
+      ],
+      quotas: [
+        { name: 'Claude Max · owner', text: '62% of 5 h window', pct: 62, color: '#8B8CFF', note: 'Resets 04:00 · 9 agents drawing' },
+        { name: 'Codex Pro · owner', text: '38% of window', pct: 38, color: '#3FCF8E', note: 'Resets 06:40 · 5 agents drawing' },
+        { name: 'Daily budget', text: '$48.20 of $120', pct: 40, color: '#5AA9FF', note: 'Projected $96 at current rate' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
