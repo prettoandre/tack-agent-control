@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tack-agent-control · Architecture</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #0A0B0D;
+      --color-paper-2: #111317;
+      --color-ink:     #E8EAED;
+      --color-muted:   #9BA1AB;
+      --color-soft:    #8B919B;
+      --color-rule:    rgba(232,234,237,0.10);
+      --color-accent:  #8B8CFF;
+      --color-link:    #5AA9FF;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body { font-family: var(--font-sans); background: var(--color-paper); color: var(--color-ink); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 3rem 2rem; }
+    .frame { max-width: 1360px; width: 100%; min-width: 0; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    .eyebrow { font-family: var(--font-mono); font-size: 0.66rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 0.5rem; }
+    h1 { font-family: var(--font-serif); font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem); font-weight: 400; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 0.5rem; }
+    .subtitle { color: var(--color-muted); font-size: 0.9rem; line-height: 1.5; max-width: 72ch; margin-bottom: 1.5rem; }
+    .notes { margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px solid var(--color-rule); font-family: var(--font-mono); font-size: 0.7rem; line-height: 1.7; color: var(--color-muted); max-width: 110ch; }
+    .notes code { color: var(--color-ink); }
+    svg { width: 100%; min-width: 1280px; display: block; }
+    @media print {
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Architecture · tack-agent-control</p>
+    <h1>Control decides, the runner only executes</h1>
+    <p class="subtitle">control owns all state and every decision. Each devbox runs one runner that exposes a closed set of five operations over herdr; it never runs a command it was sent. The highlighted path is the live terminal.</p>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="tac-architecture-title tac-architecture-desc">
+        <title id="tac-architecture-title">Control decides, the runner only executes</title>
+        <desc id="tac-architecture-desc">Architecture of tack-agent-control: the browser and the tac CLI call control; control drives each devbox runner through five closed operations; the runner drives herdr panes that hold the claude or codex session today and tack wave run later; agents, tack and the runner reach GitHub; the live terminal runs browser WebSocket to control to a runner screen poll.</desc>
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#9BA1AB"/></marker>
+          <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#8B8CFF"/></marker>
+          <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#5AA9FF"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#0A0B0D"/>
+
+        <!-- Zone: herdr server on the devbox -->
+        <rect x="968" y="120" width="272" height="360" rx="8" fill="rgba(232,234,237,0.02)" stroke="rgba(232,234,237,0.20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+        <rect x="980" y="124" width="148" height="12" rx="2" fill="#0A0B0D"/>
+        <text x="1054" y="133" fill="#8B919B" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">HERDR 0.9.3 · ONE TAB PER RUN</text>
+
+        <!-- Connectors (behind nodes) -->
+        <!-- A1 browser -> control: HTTPS + terminal WebSocket (headline) -->
+        <line x1="200" y1="212" x2="280" y2="212" stroke="#8B8CFF" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+        <!-- A2 tac -> control -->
+        <line x1="200" y1="428" x2="280" y2="428" stroke="#5AA9FF" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <!-- A3 control -> runner: closed operations -->
+        <line x1="528" y1="264" x2="624" y2="264" stroke="#5AA9FF" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <!-- A4 control -> runner: screen poll and input (headline) -->
+        <line x1="528" y1="376" x2="624" y2="376" stroke="#8B8CFF" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+        <!-- A5 runner -> claude/codex pane via herdr CLI -->
+        <line x1="904" y1="208" x2="992" y2="208" stroke="#9BA1AB" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <!-- A6 runner -> tack pane (planned: start it, poll wave status), hops over A7 -->
+        <path d="M 904,392 H 912 a 8,8 0 0,1 16,0 H 992" fill="none" stroke="#9BA1AB" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+        <!-- A7 claude/codex pane -> GitHub -->
+        <path d="M 992,240 H 928 Q 920,240 920,248 V 576 Q 920,584 928,584 H 992" fill="none" stroke="#5AA9FF" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <!-- A8 tack pane -> GitHub (planned) -->
+        <line x1="1104" y1="440" x2="1104" y2="568" stroke="#5AA9FF" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow-link)"/>
+        <!-- A9 runner -> GitHub -->
+        <path d="M 760,488 V 600 Q 760,608 768,608 H 992" fill="none" stroke="#5AA9FF" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+
+        <!-- Connector labels -->
+        <g font-family="'Geist Mono', monospace" font-size="8" text-anchor="middle" letter-spacing="0.06em">
+          <rect x="208" y="192" width="64" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="240" y="201" fill="#8B8CFF">HTTPS + WS</text>
+          <rect x="208" y="408" width="64" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="240" y="417" fill="#5AA9FF">HTTPS /API</text>
+          <rect x="544" y="244" width="64" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="576" y="253" fill="#5AA9FF">CLOSED OPS</text>
+          <rect x="532" y="356" width="88" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="576" y="365" fill="#8B8CFF">SCREEN · INPUT</text>
+          <rect x="916" y="188" width="60" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="946" y="197" fill="#9BA1AB">HERDR CLI</text>
+          <rect x="934" y="372" width="54" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="961" y="381" fill="#9BA1AB">TACK CLI</text>
+          <rect x="928" y="514" width="60" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="958" y="523" fill="#5AA9FF">PUSH · PR</text>
+          <rect x="1112" y="500" width="60" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="1142" y="509" fill="#5AA9FF">PUSH · PR</text>
+          <rect x="768" y="536" width="92" height="12" rx="2" fill="#0A0B0D"/>
+          <text x="814" y="545" fill="#5AA9FF">FETCH · PR LIST</text>
+        </g>
+
+        <!-- Node: browser (input) -->
+        <rect x="40" y="176" width="160" height="72" rx="6" fill="#0A0B0D"/>
+        <rect x="40" y="176" width="160" height="72" rx="6" fill="rgba(155,161,171,0.10)" stroke="#8B919B" stroke-width="1"/>
+        <rect x="48" y="184" width="28" height="12" rx="2" fill="none" stroke="rgba(139,145,155,0.50)" stroke-width="0.8"/>
+        <text x="62" y="193" fill="#8B919B" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">USER</text>
+        <text x="120" y="218" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Web UI</text>
+        <text x="120" y="234" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">phone or Mac browser</text>
+
+        <!-- Node: tac CLI (input) -->
+        <rect x="40" y="392" width="160" height="72" rx="6" fill="#0A0B0D"/>
+        <rect x="40" y="392" width="160" height="72" rx="6" fill="rgba(155,161,171,0.10)" stroke="#8B919B" stroke-width="1"/>
+        <rect x="48" y="400" width="24" height="12" rx="2" fill="none" stroke="rgba(139,145,155,0.50)" stroke-width="0.8"/>
+        <text x="60" y="409" fill="#8B919B" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">CLI</text>
+        <text x="120" y="434" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">tac</text>
+        <text x="120" y="450" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">dispatch · ls · send · cancel</text>
+
+        <!-- Node: control -->
+        <rect x="280" y="152" width="248" height="336" rx="6" fill="#0A0B0D"/>
+        <rect x="280" y="152" width="248" height="336" rx="6" fill="#111317" stroke="#E8EAED" stroke-width="1"/>
+        <rect x="288" y="160" width="28" height="12" rx="2" fill="none" stroke="rgba(232,234,237,0.40)" stroke-width="0.8"/>
+        <text x="302" y="169" fill="#E8EAED" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">SVC</text>
+        <text x="404" y="188" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">control</text>
+        <text x="404" y="204" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Bun · loopback :7780 · owns all state</text>
+        <g font-family="'Geist', sans-serif" font-size="12" fill="#E8EAED">
+          <rect x="288" y="216" width="232" height="24" rx="4" fill="rgba(232,234,237,0.05)" stroke="#9BA1AB" stroke-width="0.8"/>
+          <text x="296" y="232">API + React UI</text>
+          <rect x="288" y="248" width="232" height="24" rx="4" fill="rgba(232,234,237,0.05)" stroke="#9BA1AB" stroke-width="0.8"/>
+          <text x="296" y="264">runs, run_events, hosts</text>
+          <rect x="288" y="280" width="232" height="24" rx="4" fill="rgba(232,234,237,0.05)" stroke="#9BA1AB" stroke-width="0.8"/>
+          <text x="296" y="296">dispatch + reconcile loop</text>
+          <rect x="288" y="312" width="232" height="24" rx="4" fill="rgba(232,234,237,0.05)" stroke="#9BA1AB" stroke-width="0.8"/>
+          <text x="296" y="328">runner health check</text>
+          <rect x="288" y="344" width="232" height="24" rx="4" fill="rgba(232,234,237,0.05)" stroke="#9BA1AB" stroke-width="0.8"/>
+          <text x="296" y="360">terminal WebSocket</text>
+          <rect x="288" y="376" width="232" height="24" rx="4" fill="rgba(232,234,237,0.05)" stroke="#9BA1AB" stroke-width="0.8"/>
+          <text x="296" y="392">decide(): facts → state</text>
+        </g>
+        <g font-family="'Geist Mono', monospace" font-size="9" fill="#9BA1AB" text-anchor="end">
+          <text x="512" y="232">Hono</text>
+          <text x="512" y="264">SQLite</text>
+          <text x="512" y="296">5 s</text>
+          <text x="512" y="328">15 s</text>
+          <text x="512" y="360">/terminal</text>
+          <text x="512" y="392">pure</text>
+        </g>
+        <text x="404" y="428" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Tailscale-User-Login · Host allowlist</text>
+        <text x="404" y="444" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">every input recorded in run_events</text>
+
+        <!-- Node: runner -->
+        <rect x="624" y="152" width="280" height="336" rx="6" fill="#0A0B0D"/>
+        <rect x="624" y="152" width="280" height="336" rx="6" fill="#111317" stroke="#E8EAED" stroke-width="1"/>
+        <rect x="632" y="160" width="28" height="12" rx="2" fill="none" stroke="rgba(232,234,237,0.40)" stroke-width="0.8"/>
+        <text x="646" y="169" fill="#E8EAED" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">SVC</text>
+        <text x="764" y="188" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">runner</text>
+        <text x="764" y="204" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">one per devbox · tailnet IP :7781 · bearer</text>
+        <text x="632" y="226" fill="#8B919B" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.14em">THE CLOSED SET</text>
+        <g font-family="'Geist', sans-serif" font-size="12" fill="#E8EAED">
+          <rect x="632" y="236" width="264" height="24" rx="4" fill="rgba(232,234,237,0.05)" stroke="#9BA1AB" stroke-width="0.8"/>
+          <text x="640" y="252">prepare</text>
+          <rect x="632" y="268" width="264" height="24" rx="4" fill="rgba(232,234,237,0.05)" stroke="#9BA1AB" stroke-width="0.8"/>
+          <text x="640" y="284">stream terminal</text>
+          <rect x="632" y="300" width="264" height="24" rx="4" fill="rgba(232,234,237,0.05)" stroke="#9BA1AB" stroke-width="0.8"/>
+          <text x="640" y="316">send input</text>
+          <rect x="632" y="332" width="264" height="24" rx="4" fill="rgba(232,234,237,0.05)" stroke="#9BA1AB" stroke-width="0.8"/>
+          <text x="640" y="348">report state</text>
+          <rect x="632" y="364" width="264" height="24" rx="4" fill="rgba(232,234,237,0.05)" stroke="#9BA1AB" stroke-width="0.8"/>
+          <text x="640" y="380">cancel · clean up</text>
+        </g>
+        <g font-family="'Geist Mono', monospace" font-size="9" fill="#9BA1AB" text-anchor="end">
+          <text x="888" y="252">POST /runs</text>
+          <text x="888" y="284">GET /runs/:id/screen</text>
+          <text x="888" y="316">POST /runs/:id/input</text>
+          <text x="888" y="348">GET /runs/:id/status</text>
+          <text x="888" y="380">POST /cancel · /cleanup</text>
+        </g>
+        <text x="764" y="428" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">never runs a command sent by control</text>
+        <text x="764" y="444" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">state file per run · survives a restart</text>
+
+        <!-- Node: claude / codex pane (today) -->
+        <rect x="992" y="160" width="224" height="96" rx="6" fill="#0A0B0D"/>
+        <rect x="992" y="160" width="224" height="96" rx="6" fill="#111317" stroke="#E8EAED" stroke-width="1"/>
+        <rect x="1000" y="168" width="32" height="12" rx="2" fill="none" stroke="rgba(232,234,237,0.40)" stroke-width="0.8"/>
+        <text x="1016" y="177" fill="#E8EAED" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PANE</text>
+        <rect x="1168" y="168" width="40" height="12" rx="2" fill="none" stroke="rgba(232,234,237,0.40)" stroke-width="0.8"/>
+        <text x="1188" y="177" fill="#E8EAED" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">TODAY</text>
+        <text x="1104" y="208" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">claude / codex</text>
+        <text x="1104" y="224" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">interactive · cwd = run worktree</text>
+        <text x="1104" y="240" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">never bypassPermissions</text>
+
+        <!-- Node: tack wave run pane (planned) -->
+        <rect x="992" y="344" width="224" height="96" rx="6" fill="#0A0B0D"/>
+        <rect x="992" y="344" width="224" height="96" rx="6" fill="rgba(232,234,237,0.02)" stroke="rgba(232,234,237,0.40)" stroke-width="1" stroke-dasharray="4,3"/>
+        <rect x="1000" y="352" width="32" height="12" rx="2" fill="none" stroke="rgba(232,234,237,0.30)" stroke-width="0.8"/>
+        <text x="1016" y="361" fill="#8B919B" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PANE</text>
+        <rect x="1152" y="352" width="56" height="12" rx="2" fill="none" stroke="rgba(232,234,237,0.30)" stroke-width="0.8"/>
+        <text x="1180" y="361" fill="#8B919B" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PLANNED</text>
+        <text x="1104" y="392" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">tack wave run</text>
+        <text x="1104" y="408" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">drives claude -p / codex exec</text>
+        <text x="1104" y="424" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">status: tack.status/v1</text>
+
+        <!-- Node: GitHub (external) -->
+        <rect x="992" y="568" width="224" height="56" rx="6" fill="#0A0B0D"/>
+        <rect x="992" y="568" width="224" height="56" rx="6" fill="rgba(232,234,237,0.03)" stroke="rgba(232,234,237,0.30)" stroke-width="1"/>
+        <rect x="1000" y="576" width="28" height="12" rx="2" fill="none" stroke="rgba(232,234,237,0.22)" stroke-width="0.8"/>
+        <text x="1014" y="585" fill="#8B919B" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">EXT</text>
+        <text x="1112" y="594" fill="#E8EAED" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">GitHub</text>
+        <text x="1112" y="610" fill="#9BA1AB" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">origin · branches · PRs</text>
+
+        <!-- Legend strip -->
+        <line x1="40" y1="660" x2="1240" y2="660" stroke="rgba(232,234,237,0.10)" stroke-width="0.8"/>
+        <text x="40" y="676" fill="#9BA1AB" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+        <g font-family="'Geist', sans-serif" font-size="8.5" fill="#9BA1AB">
+          <rect x="40" y="690" width="14" height="10" rx="2" fill="#111317" stroke="#E8EAED" stroke-width="1"/>
+          <text x="60" y="698">Service or pane, today</text>
+          <rect x="196" y="690" width="14" height="10" rx="2" fill="rgba(232,234,237,0.02)" stroke="rgba(232,234,237,0.40)" stroke-width="1" stroke-dasharray="3,2"/>
+          <text x="216" y="698">Planned (tack integration)</text>
+          <rect x="364" y="690" width="14" height="10" rx="2" fill="rgba(155,161,171,0.10)" stroke="#8B919B" stroke-width="1"/>
+          <text x="384" y="698">Owner entry point</text>
+          <rect x="492" y="690" width="14" height="10" rx="2" fill="rgba(232,234,237,0.03)" stroke="rgba(232,234,237,0.30)" stroke-width="1"/>
+          <text x="512" y="698">External</text>
+          <line x1="580" y1="695" x2="608" y2="695" stroke="#8B8CFF" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+          <text x="616" y="698">Live terminal path</text>
+          <line x1="724" y1="695" x2="752" y2="695" stroke="#5AA9FF" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+          <text x="760" y="698">HTTP call (tailnet or GitHub)</text>
+          <line x1="912" y1="695" x2="940" y2="695" stroke="#9BA1AB" stroke-width="1.2" marker-end="url(#arrow)"/>
+          <text x="948" y="698">Local CLI call</text>
+          <line x1="1044" y1="695" x2="1072" y2="695" stroke="#9BA1AB" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+          <text x="1080" y="698">Planned call</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="notes">
+      <p>prepare: <code>git fetch</code>, <code>git worktree add --no-track</code> on <code>run/&lt;id&gt;-&lt;slug&gt;</code>, herdr workspace <code>tac:&lt;project&gt;</code> + tab, <code>herdr agent start</code>. The initial prompt goes out later, from the status poll.</p>
+      <p>stream: today control polls <code>GET /screen</code> (<code>herdr pane read --format ansi</code>) every 700 ms per open WebSocket; the spec's planned form bridges <code>herdr agent attach</code> through a pty.</p>
+      <p>send input: <code>herdr agent prompt</code>, <code>agent send-keys</code>, <code>pane send-text</code>. report state: herdr agent state, plan checkboxes (later <code>tack wave status --json</code>), <code>gh pr list --head</code>, branch HEAD. cancel: <code>ctrl+c</code> twice, close tab; cleanup also removes the worktree.</p>
+    </div>
+  </div>
+</body>
+</html>
