@@ -79,7 +79,7 @@ a{color:#A9AAFF;text-decoration:none}a:hover{color:#C9CAFF}
 </div>
 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
 <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 11.5px; color: #8B919B">Tokens / min</span><span style="font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums">{{tpm}}</span></div>
-<div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 11.5px; color: #8B919B">Spend / hour</span><span style="font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums">{{usdh}}</span></div>
+<div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 11.5px; color: #8B919B">Output tok / min</span><span style="font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums">{{otpm}}</span></div>
 </div>
 </section>
 
@@ -226,7 +226,7 @@ class Component extends DCLogic {
       doneTotal: this.state.doneTotal,
       rate: (this.state.hist.slice(-10).reduce((s, v) => s + v, 0) / 10).toFixed(1),
       tpm: (busyAll * 1.9).toFixed(0) + 'k',
-      usdh: '$' + (busyAll * 0.31).toFixed(2),
+      otpm: (busyAll * 2.4).toFixed(1) + 'k',
       events: this.state.events.map((e) => ({ agent: e.agent, text: e.text, color: C[e.state] === '#2A2E36' ? '#4A505A' : C[e.state] })),
       liveLabel: running ? 'Simulating' : 'Paused', liveBg: running ? '#3FCF8E1F' : '#F5A5241F', liveFg: running ? '#6FE0AE' : '#F5C46B',
       toggleLabel: running ? 'Pause' : 'Resume',

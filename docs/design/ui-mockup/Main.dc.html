@@ -153,7 +153,7 @@ a{color:#A9AAFF;text-decoration:none}a:hover{color:#C9CAFF}
 <th scope="col" style="padding: 10px 8px; font-weight: 500">State</th>
 <th scope="col" style="padding: 10px 8px; font-weight: 500">Engines</th>
 <th scope="col" style="padding: 10px 8px; font-weight: 500">Host</th>
-<th scope="col" style="padding: 10px 16px 10px 8px; font-weight: 500; text-align: right">Cost</th>
+<th scope="col" style="padding: 10px 16px 10px 8px; font-weight: 500; text-align: right">Tokens</th>
 </tr>
 </thead>
 <tbody>
@@ -169,7 +169,7 @@ a{color:#A9AAFF;text-decoration:none}a:hover{color:#C9CAFF}
 <sc-for list="{{r.engines}}" as="e" hint-placeholder-count="2"><span style="font-family: 'Geist Mono', monospace; font-size: 10.5px; padding: 2px 6px; border-radius: 5px; background: {{e.bg}}; color: {{e.fg}}">{{e.label}}</span></sc-for>
 </div></td>
 <td style="padding: 12px 8px; color: #C5C9D0; white-space: nowrap">{{r.host}}<div style="color: #8B919B; font-size: 11.5px; margin-top: 3px">{{r.elapsed}}</div></td>
-<td style="padding: 12px 16px 12px 8px; text-align: right; font-variant-numeric: tabular-nums; color: #E8EAED">{{r.cost}}</td>
+<td style="padding: 12px 16px 12px 8px; text-align: right; font-variant-numeric: tabular-nums; color: #E8EAED">{{r.tokens}}</td>
 </tr>
 </sc-for>
 </tbody>
@@ -238,9 +238,9 @@ class Component extends DCLogic {
     const spark = (xs) => xs.map((h, i) => ({ h: h, o: 0.35 + (i / xs.length) * 0.65 }));
     const slots = (busy, wait, total) => Array.from({ length: 8 }, (_, i) => i < busy ? { bg: '#5AA9FF33', border: '#5AA9FF66' } : i < busy + wait ? { bg: '#F5A52433', border: '#F5A52466' } : i < total ? { bg: '#15181D', border: '#262A31' } : { bg: 'transparent', border: '#1A1D22' });
     const eng = (label) => label.startsWith('codex') ? { label: label, bg: '#3FCF8E1A', fg: '#7FE3B5' } : { label: label, bg: '#8B8CFF1F', fg: '#C9CAFF' };
-    const run = (id, project, spec, wave, done, total, state, color, engines, host, elapsed, cost) => {
+    const run = (id, project, spec, wave, done, total, state, color, engines, host, elapsed, tokens) => {
       const p = pill(color);
-      return { id, project, spec, wave, tasks: done + '/' + total, pct: Math.round((done / total) * 100), state, color, stateBg: p.bg, stateFg: p.fg, engines: engines.map(eng), host, elapsed, cost };
+      return { id, project, spec, wave, tasks: done + '/' + total, pct: Math.round((done / total) * 100), state, color, stateBg: p.bg, stateFg: p.fg, engines: engines.map(eng), host, elapsed, tokens };
     };
     return {
       accent: this.props.accent ?? '#8B8CFF',
@@ -265,7 +265,7 @@ class Component extends DCLogic {
         { label: 'Needs you', value: '3', sub: 'oldest 6 min', color: C.wait, spark: spark([2, 4, 3, 2, 5, 3, 2, 4, 6, 3, 4, 5]) },
         { label: 'Queued', value: '7', sub: '2 wait on a merge', color: C.queue, spark: spark([9, 8, 10, 7, 6, 9, 8, 7, 6, 8, 7, 7]) },
         { label: 'PRs opened today', value: '11', sub: '9 gates green', color: C.done, spark: spark([1, 2, 2, 3, 5, 4, 6, 7, 8, 9, 10, 11]) },
-        { label: 'Spend today', value: '$48.20', sub: '18.4M tokens · 61% cache', color: '#8B8CFF', spark: spark([3, 5, 4, 6, 8, 7, 9, 10, 12, 11, 13, 15]) }
+        { label: 'Tokens today', value: '18.4M', sub: '61% cache', color: '#8B8CFF', spark: spark([3, 5, 4, 6, 8, 7, 9, 10, 12, 11, 13, 15]) }
       ],
       hosts: [
         { name: 'devbox-homelab', addr: 'devbox-local.tail39ebd.ts.net · :7781', status: 'Healthy', statusBg: '#3FCF8E1F', statusFg: '#7FE3B5', statusDot: '#3FCF8E',
@@ -279,12 +279,12 @@ class Component extends DCLogic {
           slotsText: 'no agents · scheduler + telemetry', slots: slots(0, 0, 0), tags: ['sqlite', 'otel collector', 'tag:agent-control'] }
       ],
       runs: [
-        run('r63agm9er', 'sigamobilidade', '030 · nats-telemetria', 'wave 2 of 3 · spec/030-nats-telemetria-w2', 7, 9, 'Running', C.run, ['codex/astra', 'claude/sonnet'], 'devbox-htz', '38 min', '$6.42'),
-        run('rk2dn6su0', 'scaii', '012 · bgp-rib-ceiling', 'wave 1 of 2', 3, 6, 'Needs you', C.wait, ['claude/opus'], 'devbox-htz', '21 min', '$4.10'),
-        run('rb3n0dw66', 'tack', '001 · sdd-contract-v1', 'wave 1a of 3 · 10 tasks', 9, 10, 'In review', C.review, ['claude/opus'], 'devbox-homelab', '2 h 04', '$18.75'),
-        run('ro1bqpflk', 'sigamobilidade', '041 · wal-archive', 'wave 1 of 1', 4, 4, 'Gate', C.run, ['codex/terra'], 'devbox-htz', '12 min', '$1.36'),
-        run('rqzrccjx0', 'tack-agent-control', '003 · web-ui', 'wave 2 of 4', 2, 7, 'Running', C.run, ['claude/sonnet', 'codex/astra'], 'devbox-homelab', '17 min', '$2.88'),
-        run('r7kwb6zd5', 'scaii', '014 · ixbr-pix-traffic', 'wave 3 of 3', 5, 8, 'Blocked', C.block, ['codex/astra'], 'devbox-htz', '44 min', '$5.02'),
+        run('r63agm9er', 'sigamobilidade', '030 · nats-telemetria', 'wave 2 of 3 · spec/030-nats-telemetria-w2', 7, 9, 'Running', C.run, ['codex/astra', 'claude/sonnet'], 'devbox-htz', '38 min', '3.9M'),
+        run('rk2dn6su0', 'scaii', '012 · bgp-rib-ceiling', 'wave 1 of 2', 3, 6, 'Needs you', C.wait, ['claude/opus'], 'devbox-htz', '21 min', '2.1M'),
+        run('rb3n0dw66', 'tack', '001 · sdd-contract-v1', 'wave 1a of 3 · 10 tasks', 9, 10, 'In review', C.review, ['claude/opus'], 'devbox-homelab', '2 h 04', '9.6M'),
+        run('ro1bqpflk', 'sigamobilidade', '041 · wal-archive', 'wave 1 of 1', 4, 4, 'Gate', C.run, ['codex/terra'], 'devbox-htz', '12 min', '640k'),
+        run('rqzrccjx0', 'tack-agent-control', '003 · web-ui', 'wave 2 of 4', 2, 7, 'Running', C.run, ['claude/sonnet', 'codex/astra'], 'devbox-homelab', '17 min', '1.4M'),
+        run('r7kwb6zd5', 'scaii', '014 · ixbr-pix-traffic', 'wave 3 of 3', 5, 8, 'Blocked', C.block, ['codex/astra'], 'devbox-htz', '44 min', '2.5M'),
         run('rkabyu0u6', 'leiloes_veiculos', '006 · lances-ao-vivo', 'wave 1 of 2', 0, 5, 'Queued', C.queue, ['claude/haiku'], 'devbox-homelab', 'in queue', '—')
       ],
       needs: [
@@ -301,8 +301,7 @@ class Component extends DCLogic {
       ],
       quotas: [
         { name: 'Claude Max · owner', text: '62% of 5 h window', pct: 62, color: '#8B8CFF', note: 'Resets 04:00 · 9 agents drawing' },
-        { name: 'Codex Pro · owner', text: '38% of window', pct: 38, color: '#3FCF8E', note: 'Resets 06:40 · 5 agents drawing' },
-        { name: 'Daily budget', text: '$48.20 of $120', pct: 40, color: '#5AA9FF', note: 'Projected $96 at current rate' }
+        { name: 'Codex Pro · owner', text: '38% of window', pct: 38, color: '#3FCF8E', note: 'Resets 06:40 · 5 agents drawing' }
       ]
     };
   }

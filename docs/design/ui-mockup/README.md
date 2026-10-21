@@ -13,11 +13,11 @@ build from it. The data in it is sample data, not measurements.
 
 | File | Screen | What it shows |
 |---|---|---|
-| `Main.dc.html` | Fleet overview | Key figures (running, needs you, queued, PRs today, spend and tokens); host cards with CPU, RAM, disk and agent slots; active runs table (progress, state, engines and models, host, cost); "Needs you" queue with approve actions; next 6 hours; account quota windows |
-| `Run.dc.html` | Run detail | Run header and actions; run figures; wave graph by DAG level; files-conflict notice; timeline of implement, review and fix per task; live terminal with message box and key bar; task detail with rounds; `events.jsonl` feed; cost by model |
+| `Main.dc.html` | Fleet overview | Key figures (running, needs you, queued, PRs today, tokens); host cards with CPU, RAM, disk and agent slots; active runs table (progress, state, engines and models, host, tokens); "Needs you" queue with approve actions; next 6 hours; account quota windows |
+| `Run.dc.html` | Run detail | Run header and actions; run figures; wave graph by DAG level; files-conflict notice; timeline of implement, review and fix per task; live terminal with message box and key bar; task detail with rounds; `events.jsonl` feed; tokens by model |
 | `Dag.dc.html` | Wave task DAG | The wave's tasks as nodes with dependency edges from `depends:`, the previous wave (merged) and the next (queued), the critical path, and the files conflict that serializes two tasks |
 | `Scheduler.dc.html` | Scheduler and queue | Day lanes per host with finished, running, scheduled, recurring and held blocks and a "now" line; the queue with the reason each item waits (quota window, previous wave's PR, project cap); recurring jobs; capacity rules |
-| `Swarm.dc.html` | Swarm (interactive) | 150 simulated agents (30–300 via the canvas's Tweaks) as tiles per host, coloured by state, with counts, tasks completed, tokens per minute, spend per hour, agents by run and a live event feed |
+| `Swarm.dc.html` | Swarm (interactive) | 150 simulated agents (30–300 via the canvas's Tweaks) as tiles per host, coloured by state, with counts, tasks completed, tokens per minute, output tokens per minute, agents by run and a live event feed |
 | `Mobile.dc.html` | Phone | Answering an agent's permission prompt: the command, the live terminal, a large key bar and Approve or Deny |
 
 `canvas.json` is the canvas index (frame sizes and order).
@@ -49,10 +49,10 @@ Dark theme. One accent; state colours differ in lightness as well as hue.
 The screens assume these sources, all named in the specs:
 
 - `tack wave status <spec> --wave N --json` (`tack.status/v1`): the DAG, levels, conflicts and per-task
-  state, round, engine, model, commits, tokens and cost (tack SDD contract v1, part 1a).
+  state, round, engine, model, commits, tokens and time (tack SDD contract v1, part 1a).
 - `events.jsonl` beside each spec: the run's event feed and timeline.
 - control's SQLite: runs, run events, hosts, queue and schedule.
 - runner health checks: host CPU, RAM, disk and agent slots.
 - OpenTelemetry from Claude Code and Codex, attributed per task through `OTEL_RESOURCE_ATTRIBUTES`
-  (sub-project 4): tokens, cost and spend rates.
+  (sub-project 4): tokens and time rates.
 - account windows: Claude Max and Codex quota (sub-project 5).

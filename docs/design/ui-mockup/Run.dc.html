@@ -181,11 +181,11 @@ a{color:#A9AAFF;text-decoration:none}a:hover{color:#C9CAFF}
 </ol>
 </section>
 
-<section aria-labelledby="cost-h" style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
-<h2 id="cost-h" style="margin: 0; font-size: 14px; font-weight: 600">Cost by model</h2>
-<sc-for list="{{cost}}" as="c" hint-placeholder-count="4">
+<section aria-labelledby="tokens-h" style="background: #111317; border: 1px solid #1F2329; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<h2 id="tokens-h" style="margin: 0; font-size: 14px; font-weight: 600">Tokens by model</h2>
+<sc-for list="{{byModel}}" as="c" hint-placeholder-count="4">
 <div style="display: flex; flex-direction: column; gap: 5px">
-<div style="display: flex; justify-content: space-between; font-size: 12px"><span style="font-family: 'Geist Mono', monospace; color: #C5C9D0">{{c.model}}</span><span style="font-variant-numeric: tabular-nums; color: #E8EAED">{{c.usd}}</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 12px"><span style="font-family: 'Geist Mono', monospace; color: #C5C9D0">{{c.model}}</span><span style="font-variant-numeric: tabular-nums; color: #E8EAED">{{c.tokens}}</span></div>
 <span aria-hidden="true" style="height: 5px; border-radius: 3px; background: #1E2228; display: block; overflow: hidden"><span style="display: block; height: 100%; width: {{c.pct}}%; background: {{c.color}}"></span></span>
 <span style="font-size: 11px; color: #8B919B">{{c.note}}</span>
 </div>
@@ -219,7 +219,7 @@ class Component extends DCLogic {
         { label: 'Tasks', value: '7 / 9', sub: '5 reviewed · 1 in review · 1 fixing' },
         { label: 'First-round pass', value: '71%', sub: '5 of 7 passed review in R0' },
         { label: 'Tokens', value: '3.9M', sub: 'in 2.6M · out 0.4M · cache 0.9M' },
-        { label: 'Cost', value: '$6.42', sub: 'codex $2.10 · claude $4.32' },
+        { label: 'Time', value: '38 min', sub: 'codex 1.6M tok · claude 2.3M tok' },
         { label: 'Gate', value: 'Pending', sub: 'scripts/gate.sh after T30.9' },
         { label: 'PR', value: '—', sub: 'opens when the gate is green' }
       ],
@@ -252,7 +252,7 @@ class Component extends DCLogic {
         { text: '  ✗ T30.7 R0 review: drop counter not exported to /metrics (1 Important)', color: '#FFA3A3' },
         { text: '  ↻ T30.7 fix round 1 started · same engine', color: '#F5C46B' },
         { text: '  ▸ T30.8 implementing · claude/haiku · writing docs/runbooks/telemetry.md', color: '#8FC4FF' },
-        { text: '  events.jsonl +4 · tokens 3.9M · $6.42', color: '#8B919B' },
+        { text: '  events.jsonl +4 · tokens 3.9M', color: '#8B919B' },
         { text: '▌', color: '#E8EAED' }
       ],
       keys: ['Esc', '↑', '↓', 'Enter', 'Tab', '1', '2', '3', 'Ctrl-C'],
@@ -264,7 +264,7 @@ class Component extends DCLogic {
         { k: 'Files', v: 'services/telemetry/router.ts, services/telemetry/router.test.ts' },
         { k: 'Teste', v: 'pnpm --filter telemetry test src/router.test.ts' },
         { k: 'Commits', v: '9b1e0d2 · 2c77f4a' },
-        { k: 'Tokens', v: '612k · $0.94' }
+        { k: 'Tokens', v: '612k' }
       ],
       events: [
         { t: '03:38', text: 'T30.8 running · claude/haiku', color: '#5AA9FF' },
@@ -276,11 +276,11 @@ class Component extends DCLogic {
         { t: '03:13', text: 'Level 1 complete · 3 commits', color: '#3FCF8E' },
         { t: '03:01', text: 'Wave 2 started · worktree .worktrees/030-w2', color: '#8B8CFF' }
       ],
-      cost: [
-        { model: 'claude/sonnet', usd: '$3.18', pct: 50, color: '#8B8CFF', note: 'reviews and 2 prose tasks' },
-        { model: 'codex/gpt-6-astra', usd: '$1.74', pct: 27, color: '#3FCF8E', note: '3 prose tasks, 2 fix rounds' },
-        { model: 'claude/haiku', usd: '$1.14', pct: 18, color: '#B48CFF', note: 'runbook, batch reviews' },
-        { model: 'codex/terra · luna', usd: '$0.36', pct: 5, color: '#5AA9FF', note: '3 mechanical tasks' }
+      byModel: [
+        { model: 'claude/sonnet', tokens: '1.9M', pct: 50, color: '#8B8CFF', note: 'reviews and 2 prose tasks' },
+        { model: 'codex/gpt-6-astra', tokens: '1.1M', pct: 27, color: '#3FCF8E', note: '3 prose tasks, 2 fix rounds' },
+        { model: 'claude/haiku', tokens: '700k', pct: 18, color: '#B48CFF', note: 'runbook, batch reviews' },
+        { model: 'codex/terra · luna', tokens: '200k', pct: 5, color: '#5AA9FF', note: '3 mechanical tasks' }
       ]
     };
   }
