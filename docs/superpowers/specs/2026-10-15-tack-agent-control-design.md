@@ -10,16 +10,17 @@ Write specs and plans (with their task waves) on any machine, then run them on
 the devbox that holds the project's data. The MacBook only defines work and
 reviews results; it runs no agent load. One mobile-friendly web UI, reached
 over the tailnet, shows everything that was dispatched or is running, gives
-full interaction with a live agent session, shows history with cost, and
-schedules runs.
+full interaction with a live agent session, shows history with tokens and
+time, and schedules runs. tack does not report dollars (tack factory evals P1,
+decision F1), so factory cost is tokens and wall time.
 
 ## Decisions made by the user
 
 - Approach A: a control plane of our own built on top of herdr. herdr runs the
   real interactive `claude` and `codex` sessions on each devbox; we build the
   control service, the per-devbox runner, the UI and the CLI.
-- The UI serves both live operation and history with cost and metrics, and it
-  must work from a phone over Tailscale (web UI, no native app).
+- The UI serves both live operation and history with tokens, time and metrics, and
+  it must work from a phone over Tailscale (web UI, no native app).
 - Full interaction: from the UI (phone included) the user can watch the live
   terminal, answer agent questions, approve permissions and send messages to a
   running session.
@@ -48,7 +49,7 @@ schedules runs.
 | 1 | Base | `agent-control` VM via `infra`; herdr pinned and configured on the devboxes; runner installed as a user service |
 | 2 | Dispatcher and runner | `control` API and data model, `runner` daemon, `tac` CLI, run lifecycle, minimal run list and attach view |
 | 3 | Web UI | Full mobile-first UI: run list and detail, wave and task progress, live terminal with input, PR links, notifications |
-| 4 | Telemetry | OTel collector on the control VM fed by Claude Code and Codex; cost, tokens, duration and failure-rate views |
+| 4 | Telemetry | OTel collector on the control VM fed by Claude Code and Codex; tokens, duration and failure-rate views |
 | 5 | Scheduler and queue | Delayed dispatch, cron runs, capacity limits per host and per account |
 
 This spec details sub-projects 1 and 2. Sub-projects 3-5 get their own spec,
